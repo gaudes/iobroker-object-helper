@@ -3,7 +3,6 @@ import * as Roles from "./lib/roles";
 import * as ObjectAttributes from "./lib/object_attributes";
 import * as ArrDiff from "fast-array-diff";
 
-
 // Declaring own interfaces, because existing interfaces in ioBroker extend BaseObject.
 // In ioBroker.BaseObject is complete structure in ioBroker described, not only the required Fields for writing to ioBroker
 export interface BaseObject{
@@ -102,6 +101,7 @@ export function makeIOBObj(...args: any[]): StateObject|ChannelObject|DeviceObje
 			}
 			break;
 	}
+	// Return correct type
 	switch (iobRes.type){
 		case "state":
 			return iobRes as StateObject;
@@ -129,19 +129,23 @@ export function saveIOBObj(_iobObj: BaseObject): boolean{
 }
 
 export function validateIOBObj(iobObj: BaseObject): boolean{
+	// Interface for Type Definitions from lib/object_attributes
 	interface iobTypeDefinition{
 		desc?: string;
 		attrMandatory?: Array<string>;
 		attrOptional?: Array<string>;
 	}
+	// Getting Type Definition for current type
 	const iobResTemplate: iobTypeDefinition = ObjectAttributes.objectTypes[iobObj["type"] as iobObjectTypes];
 	if (iobResTemplate.attrMandatory && iobObj.common){
+		// Verify that all mandatory attributes are included
 		const DiffMand = ArrDiff.diff(iobResTemplate.attrMandatory, Object.keys(iobObj.common));
 		if (DiffMand.removed?.length > 0){
 			throw `Mandatory attributes missing: ${DiffMand.removed.join(",")}`
 		}
 	}
 	if (iobObj.common && (iobResTemplate.attrOptional || iobResTemplate.attrOptional)){
+		// Verify that only mandatory and optional attributes for current type is included
 		const DiffAll = ArrDiff.diff(iobResTemplate.attrMandatory?.concat(iobResTemplate.attrOptional) || iobResTemplate.attrOptional, Object.keys(iobObj.common));
 		if (DiffAll.added?.length > 0){
 			throw `Illegal attributes added: ${DiffAll.added.join(",")}`
@@ -151,24 +155,30 @@ export function validateIOBObj(iobObj: BaseObject): boolean{
 }
 
 export function createIOBObj (objtype: iobObjectTypes, role?: iobRoles): iobObject{
+	// Interface for Type Definitions from lib/object_attributes
 	interface iobTypeDefinition{
 		desc?: string;
 		attrMandatory?: Array<string>;
 		attrOptional?: Array<string>;
 	}
-
+	// Interface for Attribute Definitions from lib/object_attributes
 	interface iobAttributeDefinition{
 		desc?: string;
 		attrType?: string|Array<string>;
 		[propName: string]: any;
 	}
+	// Temporary Interface for building result
 	interface iobReturn{
 		[propName: string]: any;
 	}
+	// Type of all valid attributes
 	type iobAttributesTotal = keyof typeof ObjectAttributes.commonAttributes;
+	// Getting Definition for current type
 	const iobResTemplate: iobTypeDefinition = ObjectAttributes.objectTypes[objtype];
+	// Temporary result object
 	const ResultCommon: iobReturn = {};
 	if (iobResTemplate.attrMandatory){
+		// Adding mandatory attributes
 		iobResTemplate.attrMandatory.forEach((key: string) => {
 			const iobCurrentAttributeName: iobAttributesTotal = key as iobAttributesTotal;
 			const CurrentAttribute = ObjectAttributes.commonAttributes[iobCurrentAttributeName] as iobAttributeDefinition;
@@ -180,9 +190,11 @@ export function createIOBObj (objtype: iobObjectTypes, role?: iobRoles): iobObje
 				}else{
 					CurrentAttributeType = CurrentAttribute.attrType;
 				}
+				//Setting type for type attribute
 				if (key === "type"){
 					ResultCommon[key] = CurrentAttributeType;
 				}else{
+					// Setting value for key
 					switch (CurrentAttributeType){
 						case "string":
 							ResultCommon[key] = "";
@@ -204,9 +216,11 @@ export function createIOBObj (objtype: iobObjectTypes, role?: iobRoles): iobObje
 			}
 		});
 	}
+	// If role is defined set role
 	if (role && (objtype === "state" || objtype === "channel")){
 		ResultCommon["role"] = role;
 	}
+	// Return correct type
 	switch (objtype){
 		case "state":
 			return {type: objtype, common: ResultCommon}  as StateObject;
