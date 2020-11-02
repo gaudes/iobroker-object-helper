@@ -1,0 +1,47 @@
+{
+  "name": "iobroker-object-helper",
+  "version": "0.0.1",
+  "description": "ioBroker Object Helper for Adapters",
+  "author": {
+    "name": "Gaudes",
+    "email": "ralf@gaudes.net"
+  },
+  "homepage": "https://github.com/gaudes/iobroker-object-helper",
+  "license": "MIT",
+  "keywords": [
+    "Smart Home",
+    "ioBroker"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gaudes/iobroker-object-helper"
+  },
+  "dependencies": {
+    "fast-array-diff": "^0.2.0"
+  },
+  "devDependencies": {
+    "@types/iobroker": "^3.2.4",
+    "@types/node": "^14.14.6",
+    "@typescript-eslint/eslint-plugin": "^4.5.0",
+    "@typescript-eslint/parser": "^4.5.0",
+    "eslint": "^7.12.0",
+    "rimraf": "^3.0.2",
+    "source-map-support": "^0.5.19",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.5"
+  },
+  "main": "build/main.js",
+  "scripts": {
+    "prebuild": "rimraf ./build",
+    "build:ts": "tsc -p tsconfig.build.json",
+    "build": "npm run build:ts",
+    "watch:ts": "tsc -p tsconfig.build.json --watch",
+    "watch": "npm run watch:ts",
+    "test": "npm run test:ts && npm run test:package",
+    "lint": "eslint --ext .ts src"
+  },
+  "bugs": {
+    "url": "https://github.com/gaudes/iobroker-object-helper/issues"
+  },
+  "readmeFilename": "README.md"
+}
