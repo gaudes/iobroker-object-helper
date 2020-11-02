@@ -1,0 +1,17 @@
+.git
+node_modules/
+.vs*/
+
+# TypeScript sources and project configuration
+src/
+tsconfig.json
+tsconfig.*.json
+
+# ESLint configuration
+.eslintrc.json
+
+# Sourcemaps
+maps/
+
+# npm package files
+package-lock.json
