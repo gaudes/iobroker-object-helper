@@ -1,44 +1,38 @@
 import { states as Templates } from "./lib/predefined_objects";
 import * as Roles from "./lib/roles";
 import * as ObjectAttributes from "./lib/object_attributes";
-import * as ArrDiff from "fast-array-diff";
+
 // Declaring own interfaces, because existing interfaces in ioBroker extend BaseObject.
 // In ioBroker.BaseObject is complete structure in ioBroker described, not only the required Fields for writing to ioBroker
-interface iobBaseObject{
-	type: string;
-	common?: ioBroker.StateCommon|ioBroker.ChannelCommon|ioBroker.DeviceCommon|ioBroker.EnumCommon|ioBroker.OtherCommon;
-}
-
-interface iobStateObject extends iobBaseObject{
+interface iobStateObject{
 	type: "state";
 	common: ioBroker.StateCommon;
 }
-interface iobChannelObject extends iobBaseObject{
+interface iobChannelObject{
 	type: "channel";
 	common: ioBroker.ChannelCommon
 }
-interface iobDeviceObject extends iobBaseObject{
+interface iobDeviceObject{
 	type: "device";
 	common: ioBroker.DeviceCommon;
 }
-interface iobFolderObject extends iobBaseObject{
+interface iobFolderObject{
 	type: "folder";
 	common: ioBroker.OtherCommon;
 }
-interface iobEnumObject extends iobBaseObject{
+interface iobEnumObject{
 	type: "enum";
 	common: ioBroker.EnumCommon
 }
-interface iobOtherObject extends iobBaseObject{
+interface iobOtherObject{
 	type: "adapter" | "config" | "group" | "host" | "info" | "instance" | "meta" | "script" | "user" | "chart";
 	common: ioBroker.OtherCommon;
 }
-type iobObjects = iobStateObject | iobChannelObject | iobDeviceObject | iobFolderObject | iobEnumObject | iobOtherObject;
 
 export interface iobObject{
 	id: string;
-	value?: any;
-	object: iobObjects;
+	object: iobStateObject|iobChannelObject|iobDeviceObject|iobFolderObject|iobEnumObject|iobOtherObject;
+	value?: string
 }
 
 // Creatable Object Types, taken from objattr because in ioBroker.ObjectType are only state, channel and device defined
@@ -52,41 +46,32 @@ type iobTemplates = keyof typeof Templates;
  * Creates basic state object with name
  * @param {String} id Name of state
  * @param {String} name Display name of state
- * @param {string|boolean|number} value Value of state
+ * @param {any} value Value of state
  * @returns {iobBaseObject} Returns state with role state and type string
 */
-export function makeIOBObj(id: string, name: string, value: any): iobObject;
+export function makeIOBObj(id: string, name: string, value: any, description?: string): iobObject;
 /**
  * Creates object from template
  * @param {String} id Name of state
  * @param {string} name Display name of object
- * @param {string|boolean|number} value Value of state
+ * @param {any} value Value of state
  * @param objtype "template"
  * @param {iobTemplates} usetemplate Name of template
- * @returns {iobBaseObject} Returns complete object
+ * @returns {iobObject} Returns complete object
 */
-export function makeIOBObj(id: string, name: string, value: any, objtype: "template", usetemplate: iobTemplates ): iobObject;
+export function makeIOBObj(id: string, name: string, value: any, objtype: "template", usetemplate: iobTemplates, description?: string ): iobObject;
 /**
  * Creates object
  * @param {String} id Name of state
  * @param {string} name Display name of object
- * @param {string|boolean|number} value Value of state
+ * @param {any} value Value of state
  * @param {iobTypes} type Type of object, e.g. state, channel, ...
  * @param {iobRoles} type Role of object, e.g. state, text, json, ...
- * * @returns {iobBaseObject} Returns complete object
+ * @returns {iobObject} Returns complete object
 */
-export function makeIOBObj(id: string, name: string, value: any, objtype: "state", role: iobRoles): iobObject;
-/**
- * Creates object
- * @param {String} id Name of state
- * @param {string} name Display name of object
- * @param {string|boolean|number} value Value of state
- * @param {iobTypes} type Type is state
- * @param {iobRoles} type Role of state is required, e.g. state, text, json, ...
- * @returns {iobBaseObject} Returns complete object
-*/
+export function makeIOBObj(id: string, name: string, value: any, objtype: "state", role: iobRoles, description?: string): iobObject;
 export function makeIOBObj(...args: any[]): iobObject {
-	let iobResObject: iobBaseObject;
+	let iobResObject: {[k: string]: any};
 	switch(args.length){
 		case 3:
 			// Create basic state object with name
@@ -106,51 +91,37 @@ export function makeIOBObj(...args: any[]): iobObject {
 			}
 			break;
 	}
+	if (args[5] && (iobResObject.type !== "device" && iobResObject.type !== "enum")){
+		iobResObject.common.desc = args[5];
+	}
+	// Building information (id, value)
+	const iobResult = <iobObject>{};
+	iobResult.id = args[0];
+	if (args[2] !== null){
+		iobResult.value = args[2];
+	}
 	// Return correct type
 	switch (iobResObject.type){
 		case "state":
-			if (args[2] === null){
-				return { id: args[0], object: iobResObject as iobStateObject};
-			}else{
-				return { id: args[0], value: args[2], object: iobResObject as iobStateObject};
-			}
+			iobResult.object = iobResObject as iobStateObject;
 			break;
 		case "channel":
-			if (args[2] === null){
-				return { id: args[0], object: iobResObject as iobChannelObject};
-			}else{
-				return { id: args[0], value: args[2], object: iobResObject as iobChannelObject};
-			}
+			iobResult.object = iobResObject as iobChannelObject;
 			break;
 		case "device":
-			if (args[2] === null){
-				return { id: args[0], object: iobResObject as iobDeviceObject};
-			}else{
-				return { id: args[0], value: args[2], object: iobResObject as iobDeviceObject};
-			}
+			iobResult.object = iobResObject as iobDeviceObject;
 			break;
 		case"folder":
-			if (args[2] === null){
-				return { id: args[0], object: iobResObject as iobFolderObject};
-			}else{
-				return { id: args[0], value: args[2], object: iobResObject as iobFolderObject};
-			}
+			iobResult.object = iobResObject as iobFolderObject;
 			break;
 		case "enum":
-			if (args[2] === null){
-				return { id: args[0], object: iobResObject as iobEnumObject};
-			}else{
-				return { id: args[0], value: args[2], object: iobResObject as iobEnumObject};
-			}
+			iobResult.object = iobResObject as iobEnumObject;
 			break;
 		default:
-			if (args[2] === null){
-				return { id: args[0], object: iobResObject as iobOtherObject};
-			}else{
-				return { id: args[0], value: args[2], object: iobResObject as iobOtherObject};
-			}
+			iobResult.object = iobResObject as iobOtherObject;
 			break;
 	}
+	return iobResult;
 }
 
 export function saveIOBObj(_iobObj: Array<iobObject>): boolean{
@@ -168,22 +139,22 @@ export function validateIOBObj(iobObj: iobObject): boolean{
 	const iobResTemplate: iobTypeDefinition = ObjectAttributes.objectTypes[iobObj.object["type"] as iobObjectTypes];
 	if (iobResTemplate.attrMandatory && iobObj.object.common){
 		// Verify that all mandatory attributes are included
-		const DiffMand = ArrDiff.diff(iobResTemplate.attrMandatory, Object.keys(iobObj.object.common));
-		if (DiffMand.removed?.length > 0){
-			throw `Mandatory attributes missing: ${DiffMand.removed.join(",")}`
+		const DiffMand = iobResTemplate.attrMandatory.filter(x => Object.keys(iobObj.object.common).includes(x));
+		if (DiffMand.length !== iobResTemplate.attrMandatory.length){
+			throw `Mandatory attributes missing: ${DiffMand.join(",")}`
 		}
 	}
 	if (iobObj.object.common && (iobResTemplate.attrOptional || iobResTemplate.attrOptional)){
 		// Verify that only mandatory and optional attributes for current type is included
-		const DiffAll = ArrDiff.diff(iobResTemplate.attrMandatory?.concat(iobResTemplate.attrOptional) || iobResTemplate.attrOptional, Object.keys(iobObj.object.common));
-		if (DiffAll.added?.length > 0){
-			throw `Illegal attributes added: ${DiffAll.added.join(",")}`
+		const DiffAll = (iobResTemplate.attrMandatory?.concat(iobResTemplate.attrOptional) || iobResTemplate.attrOptional).filter(x => Object.keys(iobObj.object.common).includes(x));
+		if (DiffAll.length !== Object.keys(iobObj.object.common).length){
+			throw `Mandatory attributes missing: ${DiffAll.join(",")}`
 		}
 	}
 	return true;
 }
 
-export function createIOBObj (objtype: iobObjectTypes, role?: iobRoles): iobBaseObject{
+export function createIOBObj (objtype: iobObjectTypes, role?: iobRoles): iobStateObject|iobChannelObject|iobDeviceObject|iobFolderObject|iobEnumObject|iobOtherObject{
 	// Interface for Type Definitions from lib/object_attributes
 	interface iobTypeDefinition{
 		desc?: string;
