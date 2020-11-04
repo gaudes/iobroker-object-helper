@@ -250,6 +250,10 @@ export function createIOBObj (objtype: iobObjectTypes, role?: iobRoles): iobStat
 	// If role is defined set role
 	if (role && (objtype === "state" || objtype === "channel")){
 		ResultCommon["role"] = role;
+		const iobRoleTemplate: {[k: string]: any} = Roles.roles_definition[role];
+		for (const key in iobRoleTemplate){
+			ResultCommon[key]  = iobRoleTemplate[key];
+		}
 	}
 	// Return correct type
 	switch (objtype){
