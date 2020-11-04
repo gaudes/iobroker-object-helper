@@ -1,6 +1,7 @@
 import { states as Templates } from "./lib/predefined_objects";
 import * as Roles from "./lib/roles";
 import * as ObjectAttributes from "./lib/object_attributes";
+import * as matcher  from "matcher";
 
 // Declaring own interfaces, because existing interfaces in ioBroker extend BaseObject.
 // In ioBroker.BaseObject is complete structure in ioBroker described, not only the required Fields for writing to ioBroker
@@ -124,7 +125,37 @@ export function makeIOBObj(...args: any[]): iobObject {
 	return iobResult;
 }
 
-export function saveIOBObj(_iobObj: Array<iobObject>): boolean{
+export async function saveIOBObj(Adapter: any, iobObjects: Array<iobObject>, overwrite = false, remove = false, excluded?: string|string[]): Promise<boolean>{
+	/*
+	// Sort by ID ?
+	const IDs = iobObj.map(a => a.id);
+	IDs.forEach((key: string) => {console.log(key)});
+	return true;
+	*/
+	iobObjects.forEach(async iobObj => {
+		if (overwrite === false){
+			await Adapter.setObjectNotExistsAsync(iobObj.id, iobObj.object);
+		}else{
+			await Adapter.setObjectAsync(iobObj.id, iobObj.object);
+		}
+		if (iobObj.value){
+			await Adapter.setStateAsync(iobObj.id, { val: iobObj.value, ack: true });
+		}
+	});
+	if (remove === true){
+		const iobExistingObjects = await Adapter.getAdapterObjectsAsync() as any[];
+		Object.keys(iobExistingObjects).forEach(async iobExistingObjectID =>{
+			if ((iobObjects.map(a => a.id).includes(iobExistingObjectID.replace(`${Adapter.name}.${Adapter.instance}.`, "")) !== true)){
+				if (excluded){
+					if (matcher.isMatch(iobExistingObjectID.replace(`${Adapter.name}.${Adapter.instance}.`, ""), excluded) !== true){
+						await Adapter.delObjectAsync(iobExistingObjectID);
+					}
+				} else{
+					await Adapter.delObjectAsync(iobExistingObjectID);
+				}
+			}
+		});
+	}
 	return true;
 }
 

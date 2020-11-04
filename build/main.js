@@ -1,90 +1,139 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createIOBObj = exports.validateIOBObj = exports.saveIOBObj = exports.makeIOBObj = void 0;
 const predefined_objects_1 = require("./lib/predefined_objects");
 const ObjectAttributes = require("./lib/object_attributes");
-const ArrDiff = require("fast-array-diff");
-/**
- * Creates object
- * @param {string} name Name of object
- * @param {iobTypes} type Type is state
- * @param {iobRoles} type Role of state is required, e.g. state, text, json, ...
- * @returns {BaseObject} Returns complete object
-*/
+const matcher = require("matcher");
 function makeIOBObj(...args) {
-    let iobRes;
+    let iobResObject;
     switch (args.length) {
-        case 0:
-            // Create basic state object
-            iobRes = { "type": "state", common: { "name": "", "role": "state", "read": true, "write": true, "type": "string", "desc": "" } };
-            break;
-        case 1:
+        case 3:
             // Create basic state object with name
-            iobRes = { "type": "state", common: { "name": args[0], "role": "state", "read": true, "write": true, "type": "string", "desc": "" } };
+            iobResObject = { "type": "state", common: { "name": args[1], "role": "state", "read": true, "write": true, "type": "string", "desc": "" } };
             break;
         default:
             // Create object based on template
             // args[1] is name of template or name of Type
-            if (args[1] === "template") {
-                const usetemplate = args[2];
-                iobRes = predefined_objects_1.states[usetemplate];
+            if (args[3] === "template") {
+                const usetemplate = args[4];
+                iobResObject = predefined_objects_1.states[usetemplate];
             }
             else {
-                iobRes = createIOBObj(args[1], args[2]);
+                iobResObject = createIOBObj(args[3], args[4]);
             }
-            if (iobRes.common) {
-                iobRes.common.name = args[0] || "";
+            if (iobResObject.common) {
+                iobResObject.common.name = args[1] || "";
             }
             break;
     }
-    switch (iobRes.type) {
+    if (args[5] && (iobResObject.type !== "device" && iobResObject.type !== "enum")) {
+        iobResObject.common.desc = args[5];
+    }
+    // Building information (id, value)
+    const iobResult = {};
+    iobResult.id = args[0];
+    if (args[2] !== null) {
+        iobResult.value = args[2];
+    }
+    // Return correct type
+    switch (iobResObject.type) {
         case "state":
-            return iobRes;
+            iobResult.object = iobResObject;
             break;
         case "channel":
-            return iobRes;
+            iobResult.object = iobResObject;
             break;
         case "device":
-            return iobRes;
+            iobResult.object = iobResObject;
             break;
         case "folder":
-            return iobRes;
+            iobResult.object = iobResObject;
             break;
         case "enum":
-            return iobRes;
+            iobResult.object = iobResObject;
             break;
         default:
-            return iobRes;
+            iobResult.object = iobResObject;
             break;
     }
+    return iobResult;
 }
 exports.makeIOBObj = makeIOBObj;
-function saveIOBObj(_iobObj) {
-    return true;
+function saveIOBObj(Adapter, iobObjects, overwrite = false, remove = false, excluded) {
+    return __awaiter(this, void 0, void 0, function* () {
+        /*
+        // Sort by ID ?
+        const IDs = iobObj.map(a => a.id);
+        IDs.forEach((key: string) => {console.log(key)});
+        return true;
+        */
+        iobObjects.forEach((iobObj) => __awaiter(this, void 0, void 0, function* () {
+            if (overwrite === false) {
+                yield Adapter.setObjectNotExistsAsync(iobObj.id, iobObj.object);
+            }
+            else {
+                yield Adapter.setObjectAsync(iobObj.id, iobObj.object);
+            }
+            if (iobObj.value) {
+                yield Adapter.setStateAsync(iobObj.id, { val: iobObj.value, ack: true });
+            }
+        }));
+        if (remove === true) {
+            const iobExistingObjects = yield Adapter.getAdapterObjectsAsync();
+            Object.keys(iobExistingObjects).forEach((iobExistingObjectID) => __awaiter(this, void 0, void 0, function* () {
+                if ((iobObjects.map(a => a.id).includes(iobExistingObjectID.replace(`${Adapter.name}.${Adapter.instance}.`, "")) !== true)) {
+                    if (excluded) {
+                        if (matcher.isMatch(iobExistingObjectID.replace(`${Adapter.name}.${Adapter.instance}.`, ""), excluded) !== true) {
+                            yield Adapter.delObjectAsync(iobExistingObjectID);
+                        }
+                    }
+                    else {
+                        yield Adapter.delObjectAsync(iobExistingObjectID);
+                    }
+                }
+            }));
+        }
+        return true;
+    });
 }
 exports.saveIOBObj = saveIOBObj;
 function validateIOBObj(iobObj) {
-    var _a, _b, _c;
-    const iobResTemplate = ObjectAttributes.objectTypes[iobObj["type"]];
-    if (iobResTemplate.attrMandatory && iobObj.common) {
-        const DiffMand = ArrDiff.diff(iobResTemplate.attrMandatory, Object.keys(iobObj.common));
-        if (((_a = DiffMand.removed) === null || _a === void 0 ? void 0 : _a.length) > 0) {
-            throw `Mandatory attributes missing: ${DiffMand.removed.join(",")}`;
+    var _a;
+    // Getting Type Definition for current type
+    const iobResTemplate = ObjectAttributes.objectTypes[iobObj.object["type"]];
+    if (iobResTemplate.attrMandatory && iobObj.object.common) {
+        // Verify that all mandatory attributes are included
+        const DiffMand = iobResTemplate.attrMandatory.filter(x => Object.keys(iobObj.object.common).includes(x));
+        if (DiffMand.length !== iobResTemplate.attrMandatory.length) {
+            throw `Mandatory attributes missing: ${DiffMand.join(",")}`;
         }
     }
-    if (iobObj.common && (iobResTemplate.attrOptional || iobResTemplate.attrOptional)) {
-        const DiffAll = ArrDiff.diff(((_b = iobResTemplate.attrMandatory) === null || _b === void 0 ? void 0 : _b.concat(iobResTemplate.attrOptional)) || iobResTemplate.attrOptional, Object.keys(iobObj.common));
-        if (((_c = DiffAll.added) === null || _c === void 0 ? void 0 : _c.length) > 0) {
-            throw `Illegal attributes added: ${DiffAll.added.join(",")}`;
+    if (iobObj.object.common && (iobResTemplate.attrOptional || iobResTemplate.attrOptional)) {
+        // Verify that only mandatory and optional attributes for current type is included
+        const DiffAll = (((_a = iobResTemplate.attrMandatory) === null || _a === void 0 ? void 0 : _a.concat(iobResTemplate.attrOptional)) || iobResTemplate.attrOptional).filter(x => Object.keys(iobObj.object.common).includes(x));
+        if (DiffAll.length !== Object.keys(iobObj.object.common).length) {
+            throw `Mandatory attributes missing: ${DiffAll.join(",")}`;
         }
     }
     return true;
 }
 exports.validateIOBObj = validateIOBObj;
 function createIOBObj(objtype, role) {
+    // Getting Definition for current type
     const iobResTemplate = ObjectAttributes.objectTypes[objtype];
+    // Temporary result object
     const ResultCommon = {};
     if (iobResTemplate.attrMandatory) {
+        // Adding mandatory attributes
         iobResTemplate.attrMandatory.forEach((key) => {
             const iobCurrentAttributeName = key;
             const CurrentAttribute = ObjectAttributes.commonAttributes[iobCurrentAttributeName];
@@ -97,10 +146,12 @@ function createIOBObj(objtype, role) {
                 else {
                     CurrentAttributeType = CurrentAttribute.attrType;
                 }
+                //Setting type for type attribute
                 if (key === "type") {
                     ResultCommon[key] = CurrentAttributeType;
                 }
                 else {
+                    // Setting value for key
                     switch (CurrentAttributeType) {
                         case "string":
                             ResultCommon[key] = "";
@@ -122,9 +173,11 @@ function createIOBObj(objtype, role) {
             }
         });
     }
+    // If role is defined set role
     if (role && (objtype === "state" || objtype === "channel")) {
         ResultCommon["role"] = role;
     }
+    // Return correct type
     switch (objtype) {
         case "state":
             return { type: objtype, common: ResultCommon };

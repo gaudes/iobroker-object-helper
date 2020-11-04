@@ -17,6 +17,7 @@
     "url": "https://github.com/gaudes/iobroker-object-helper"
   },
   "dependencies": {
+    "matcher": "^3.0.0"
   },
   "devDependencies": {
     "@types/iobroker": "^3.2.4",
