@@ -34,14 +34,18 @@ export const objectCommonSchemas = validateCommonSchema({
 			"desc",
 			"min",
 			"max",
-			"step",
+			// step currently missing in official definition, but integrated in schema.md
+			// Issue in Adapter-Core opened: https://github.com/ioBroker/adapter-core/issues/283
+			//"step",
 			"unit",
 			"states",
 			"workingID",
 			"custom",
-			"history",
-			"history.*.changesOnly",
-			"history.*.enabled"
+			"history"
+			// Wildcard matching does not work in auto-validation and does not fit definitions
+			//,
+			//"history.*.changesOnly",
+			//"history.*.enabled"
 		]
 	},
 	"channel": {
@@ -206,9 +210,19 @@ export const objectCommonSchemas = validateCommonSchema({
 			"desc"
 		]
 	},
-	"chart": {
-		"desc": "Represents a chart (e.g. for flot)"
+	// Info is in Type Definitions, but missing in documentation
+	// See issue: https://github.com/ioBroker/adapter-core/issues/283
+	"info": {
+		"desc": "Information object",
+		"attrMandatory": [
+			"name"
+		]
 	}
+	// Same as step, included in schema but missing in defintion
+	// Same issue as step: https://github.com/ioBroker/adapter-core/issues/283
+	//"chart": {
+	//	"desc": "Represents a chart (e.g. for flot)"
+	//}
 });
 
 // This type is used to statically validate the schema below for correct type and correct properties
@@ -233,9 +247,12 @@ export const commonAttributes = validateCommonAttributes({
 			"array",
 			"object",
 			"mixed",
-			"file",
-			"meta.user",
-			"meta.folder"
+			"file"
+			// Meta is only allowed when object type is meta, see schema.md:
+			// common.type (optional - (default is mixed==any type) (possible values: number, string, boolean, array, object, mixed, file). As exception the objects with type meta could have common.type=meta.user or meta.folder
+			// Meta is defined above without attributes
+			// "meta.user",
+			// "meta.folder"
 		],
 		"attrType": "string"
 	},
@@ -255,18 +272,21 @@ export const commonAttributes = validateCommonAttributes({
 		"write": true,
 		"attrType": "number"
 	},
-	"step": {
-		"desc": "Increase/decrease interval",
-		"type": "number",
-		"write": true,
-		"attrType": "number"
-	},
+	// Currently missing in type definitions, Issue create
+	//"step": {
+	//	"desc": "Increase/decrease interval",
+	//	"type": "number",
+	//	"write": true,
+	//	"attrType": "number"
+	//},
 	"unit": {
 		"desc": "The unit of the value",
 		"type": "number",
 		"attrType": "string"
 	},
-	"def": {
+	// Default value depends on type of state
+	// So attrType depends also on type of state
+	/*"def": {
 		"desc": "Default value",
 		"attrType": [
 			"string",
@@ -275,7 +295,7 @@ export const commonAttributes = validateCommonAttributes({
 			"array",
 			"object"
 		]
-	},
+	},*/
 	"defAck": {
 		"desc": "If common.def is set the ACK flag is set to this value",
 		"attrType": "boolean"
@@ -303,14 +323,14 @@ export const commonAttributes = validateCommonAttributes({
 	"workingID": {
 		"desc": "If this state has helper state WORKING. Here must be written the full name or just the last part if the first parts are the same with actual. Used for HM.LEVEL and normally has value 'WORKING'",
 		"type": "string",
-		"role": "indicator.working",
 		"attrType": "string"
 	},
 	"custom": {
 		"desc": "The structure with custom settings for specific adapters. Like {'influxdb.0': {'enabled': true, 'alias': 'name'}}. enabled attribute is required and if it is not true, the whole attribute will be deleted.",
 		"attrType": "object"
 	},
-	"history": {
+	// common.history is correct, but lacks of a type, is only in path with instance referenced, see below also.
+	/*"history": {
 		"desc": "History function needs the history adapter or any other storage adapter of type history\n fifo length is reduced to min when max is hit. set to null or leave undefined to use defaults\n for a list of transports see history adapter README"
 	},
 	"history.*.changesOnly": {
@@ -321,11 +341,18 @@ export const commonAttributes = validateCommonAttributes({
 		"desc": "History enabled for this state",
 		"attrType": "boolean"
 	},
+	*/
 	"members": {
 		"desc": "Holds an array with member IDs",
 		"attrType": "array"
 	},
-	"adminTab.fa-icon": {
+	"icon": {
+		"desc": "Name of the local icon (should be located in subdirectory 'admin')",
+		"attrType": "string"
+	}
+	// Below are attributes of special objects like adapter, host, etc.
+	// These are defined in definitions as OtherCommon with any attributes
+	/*"adminTab.fa-icon": {
 		"desc": "Font-Awesome icon name for TAB.",
 		"attrType": "string"
 	},
@@ -400,10 +427,6 @@ export const commonAttributes = validateCommonAttributes({
 	"getHistory": {
 		"desc": "True if adapter supports getHistory message",
 		"attrType": "boolean"
-	},
-	"icon": {
-		"desc": "Name of the local icon (should be located in subdirectory 'admin')",
-		"attrType": "string"
 	},
 	"installedVersion": {
 		"desc": "Installed version of adapter, includes source path.",
@@ -650,7 +673,7 @@ export const commonAttributes = validateCommonAttributes({
 	"host": {
 		"desc": "Host on which the instance is running.",
 		"attrType": "string"
-	}
+	}*/
 });
 
 module.exports = { objectTypes: objectCommonSchemas, commonAttributes };
