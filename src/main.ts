@@ -3,6 +3,7 @@ import * as Roles from "./lib/roles";
 import * as ObjectAttributes from "./lib/object_attributes";
 import { CommonAttributes, CommonAttributeSchema, ObjectTypes, TemplateObjectDefinition } from "./lib/types";
 import * as util from "util";
+import cloneDeep from "clone-deep";
 
 export interface ObjectWithValue {
 	id: string;
@@ -51,7 +52,7 @@ export function buildObject(adapterInstance: ioBroker.Adapter, options: BuildObj
 	if (options.objectType != undefined) {
 		if (options.objectType === "template") {
 			// Use a predefined template
-			definition = Templates[options.template];
+			definition = cloneDeep(Templates[options.template]);
 		} else {
 			// Create a new object from the given options
 			definition = createTemplateObjectDefinition(options.objectType, options.role);
