@@ -1,279 +1,242 @@
-import { states as Templates } from "./lib/predefined_objects";
+import { templates as Templates } from "./lib/predefined_objects";
 import * as Roles from "./lib/roles";
 import * as ObjectAttributes from "./lib/object_attributes";
-import * as matcher  from "matcher";
+import { CommonAttributes, CommonAttributeSchema, ObjectTypes, TemplateObjectDefinition } from "./lib/types";
+import * as util from "util";
 
-// Declaring own interfaces, because existing interfaces in ioBroker extend BaseObject.
-// In ioBroker.BaseObject is complete structure in ioBroker described, not only the required Fields for writing to ioBroker
-interface iobStateObject{
-	type: "state";
-	common: ioBroker.StateCommon;
-}
-interface iobChannelObject{
-	type: "channel";
-	common: ioBroker.ChannelCommon
-}
-interface iobDeviceObject{
-	type: "device";
-	common: ioBroker.DeviceCommon;
-}
-interface iobFolderObject{
-	type: "folder";
-	common: ioBroker.OtherCommon;
-}
-interface iobEnumObject{
-	type: "enum";
-	common: ioBroker.EnumCommon
-}
-interface iobOtherObject{
-	type: "adapter" | "config" | "group" | "host" | "info" | "instance" | "meta" | "script" | "user" | "chart";
-	common: ioBroker.OtherCommon;
-}
-
-export interface iobObject{
+export interface ObjectWithValue {
 	id: string;
-	object: iobStateObject|iobChannelObject|iobDeviceObject|iobFolderObject|iobEnumObject|iobOtherObject;
-	value?: string
+	object: ioBroker.SettableObject;
+	value?: string | number | boolean | ioBroker.State | ioBroker.SettableState | null;
 }
 
-// Creatable Object Types, taken from objattr because in ioBroker.ObjectType are only state, channel and device defined
-type iobObjectTypes = keyof typeof ObjectAttributes.objectTypes;
 // Defined roles, taken from roles
-type iobRoles = keyof typeof Roles.roles_definition;
+type ObjectRoles = keyof typeof Roles.roles_definition;
 // Name of templates
-type iobTemplates = keyof typeof Templates;
+type ObjectTemplateNames = keyof typeof Templates;
 
-/**
- * Creates basic state object with name
- * @param {String} id Name of state
- * @param {String} name Display name of state
- * @param {any} value Value of state
- * @returns {iobBaseObject} Returns state with role state and type string
-*/
-export function makeIOBObj(id: string, name: string, value: any, description?: string): iobObject;
-/**
- * Creates object from template
- * @param {String} id Name of state
- * @param {string} name Display name of object
- * @param {any} value Value of state
- * @param objtype "template"
- * @param {iobTemplates} usetemplate Name of template
- * @returns {iobObject} Returns complete object
-*/
-export function makeIOBObj(id: string, name: string, value: any, objtype: "template", usetemplate: iobTemplates, description?: string ): iobObject;
-/**
- * Creates object
- * @param {String} id Name of state
- * @param {string} name Display name of object
- * @param {any} value Value of state
- * @param {iobTypes} type Type of object, e.g. state, channel, ...
- * @param {iobRoles} type Role of object, e.g. state, text, json, ...
- * @returns {iobObject} Returns complete object
-*/
-export function makeIOBObj(id: string, name: string, value: any, objtype: "state", role: iobRoles, description?: string): iobObject;
-export function makeIOBObj(...args: any[]): iobObject {
-	let iobResObject: {[k: string]: any};
-	switch(args.length){
-		case 3:
-			// Create basic state object with name
-			iobResObject = {"type": "state", common:{ "name": args[1], "role": "state", "read": true, "write": true, "type": "string", "desc": ""}} as iobStateObject;
-			break;
-		default:
-			// Create object based on template
-			// args[1] is name of template or name of Type
-			if (args[3] === "template" ){
-				const usetemplate: iobTemplates = args[4];
-				iobResObject = Templates[usetemplate] as iobOtherObject;
-			}else{
-				iobResObject = createIOBObj(args[3],args[4]);
-			}
-			if (iobResObject.common){
-				iobResObject.common.name  = args[1] || "";
-			}
-			break;
+/** Defines the options for @see makeIOBObj */
+export type BuildObjectOptions = {
+	/** ID of the new object */
+	id: string;
+	/** Display name of the object */
+	name: string;
+	/** Description for the object */
+	description?: string;
+	/** Optional value for the corresponding state */
+	value?: string | number | boolean | ioBroker.State | ioBroker.SettableState | null;
+} & (
+	| { objectType?: undefined } // no extra options
+	| {
+		/** "template" tells the method to create an object from a template */
+		objectType: "template",
+		/** The predefined template to use for the object */
+		template: ObjectTemplateNames,
 	}
-	if (args[5] && (iobResObject.type !== "device" && iobResObject.type !== "enum")){
-		iobResObject.common.desc = args[5];
+	| {
+		/** or use the given object type */
+		objectType: ObjectTypes,
+		/** The role to use for the object */
+		role: ObjectRoles,
 	}
-	// Building information (id, value)
-	const iobResult = <iobObject>{};
-	iobResult.id = args[0];
-	if (args[2] !== null){
-		iobResult.value = args[2];
-	}
-	// Return correct type
-	switch (iobResObject.type){
-		case "state":
-			iobResult.object = iobResObject as iobStateObject;
-			break;
-		case "channel":
-			iobResult.object = iobResObject as iobChannelObject;
-			break;
-		case "device":
-			iobResult.object = iobResObject as iobDeviceObject;
-			break;
-		case"folder":
-			iobResult.object = iobResObject as iobFolderObject;
-			break;
-		case "enum":
-			iobResult.object = iobResObject as iobEnumObject;
-			break;
-		default:
-			iobResult.object = iobResObject as iobOtherObject;
-			break;
-	}
-	return iobResult;
+)
+
+function ensureNamespace(namespace: string, objectId: string): string {
+	if (objectId.startsWith(`${namespace}.`)) return objectId;
+	return `${namespace}.${objectId}`;
 }
 
-export async function saveIOBObj(Adapter: any, iobObjects: Array<iobObject>, overwrite = false, remove = false, excluded?: string|string[]): Promise<boolean>{
-	/*
-	// Sort by ID ?
-	const IDs = iobObj.map(a => a.id);
-	IDs.forEach((key: string) => {console.log(key)});
-	return true;
-	*/
-	iobObjects.forEach(async iobObj => {
-		if (overwrite === false){
-			await Adapter.setObjectNotExistsAsync(iobObj.id, iobObj.object);
-		}else{
-			await Adapter.setObjectAsync(iobObj.id, iobObj.object);
+export function buildObject(adapterInstance: ioBroker.Adapter, options: BuildObjectOptions): ObjectWithValue {
+	let definition: TemplateObjectDefinition;
+	if (options.objectType != undefined) {
+		if (options.objectType === "template") {
+			// Use a predefined template
+			definition = Templates[options.template];
+		} else {
+			// Create a new object from the given options
+			definition = createTemplateObjectDefinition(options.objectType, options.role);
 		}
-		if (iobObj.value){
-			await Adapter.setStateAsync(iobObj.id, { val: iobObj.value, ack: true });
+		definition.common.name = options.name || "";
+	} else {
+		// Create basic state object with name
+		definition = {
+			type: "state",
+			common: { "name": options.name, "role": "state", "read": true, "write": true, "type": "string", "desc": "" }
 		}
-	});
-	if (remove === true){
-		const iobExistingObjects = await Adapter.getAdapterObjectsAsync() as any[];
-		Object.keys(iobExistingObjects).forEach(async iobExistingObjectID =>{
-			if ((iobObjects.map(a => a.id).includes(iobExistingObjectID.replace(`${Adapter.name}.${Adapter.instance}.`, "")) !== true)){
-				if (excluded){
-					if (matcher.isMatch(iobExistingObjectID.replace(`${Adapter.name}.${Adapter.instance}.`, ""), excluded) !== true){
-						await Adapter.delObjectAsync(iobExistingObjectID);
-					}
-				} else{
-					await Adapter.delObjectAsync(iobExistingObjectID);
-				}
-			}
-		});
 	}
-	return true;
+	if (options.description != undefined && definition.type !== "device" && definition.type !== "enum") {
+		definition.common.desc = options.description;
+	}
+
+	const ret: ObjectWithValue = {
+		id: ensureNamespace(adapterInstance.namespace, options.id),
+		object: { ...definition, native: {} },
+	};
+	if (options.value !== undefined) {
+		ret.value = options.value;
+	}
+	return ret;
 }
 
-export function validateIOBObj(iobObj: iobObject): boolean{
-	// Interface for Type Definitions from lib/object_attributes
-	interface iobTypeDefinition{
-		desc?: string;
-		attrMandatory?: Array<string>;
-		attrOptional?: Array<string>;
-	}
-	// Getting Type Definition for current type
-	const iobResTemplate: iobTypeDefinition = ObjectAttributes.objectTypes[iobObj.object["type"] as iobObjectTypes];
-	if (iobResTemplate.attrMandatory && iobObj.object.common){
-		// Verify that all mandatory attributes are included
-		const DiffMand = iobResTemplate.attrMandatory.filter(x => Object.keys(iobObj.object.common).includes(x));
-		if (DiffMand.length !== iobResTemplate.attrMandatory.length){
-			throw `Mandatory attributes missing: ${DiffMand.join(",")}`
-		}
-	}
-	if (iobObj.object.common && (iobResTemplate.attrOptional || iobResTemplate.attrOptional)){
-		// Verify that only mandatory and optional attributes for current type is included
-		const DiffAll = (iobResTemplate.attrMandatory?.concat(iobResTemplate.attrOptional) || iobResTemplate.attrOptional).filter(x => Object.keys(iobObj.object.common).includes(x));
-		if (DiffAll.length !== Object.keys(iobObj.object.common).length){
-			throw `Mandatory attributes missing: ${DiffAll.join(",")}`
-		}
-	}
-	return true;
-}
-
-export function createIOBObj (objtype: iobObjectTypes, role?: iobRoles): iobStateObject|iobChannelObject|iobDeviceObject|iobFolderObject|iobEnumObject|iobOtherObject{
-	// Interface for Type Definitions from lib/object_attributes
-	interface iobTypeDefinition{
-		desc?: string;
-		attrMandatory?: Array<string>;
-		attrOptional?: Array<string>;
-	}
-	// Interface for Attribute Definitions from lib/object_attributes
-	interface iobAttributeDefinition{
-		desc?: string;
-		attrType?: string|Array<string>;
-		[propName: string]: any;
-	}
-	// Temporary Interface for building result
-	interface iobReturn{
-		[propName: string]: any;
-	}
-	// Type of all valid attributes
-	type iobAttributesTotal = keyof typeof ObjectAttributes.commonAttributes;
-	// Getting Definition for current type
-	const iobResTemplate: iobTypeDefinition = ObjectAttributes.objectTypes[objtype];
-	// Temporary result object
-	const ResultCommon: iobReturn = {};
-	if (iobResTemplate.attrMandatory){
-		// Adding mandatory attributes
-		iobResTemplate.attrMandatory.forEach((key: string) => {
-			const iobCurrentAttributeName: iobAttributesTotal = key as iobAttributesTotal;
-			const CurrentAttribute = ObjectAttributes.commonAttributes[iobCurrentAttributeName] as iobAttributeDefinition;
-			// Take first or single attrType, check for further attributes
-			if (CurrentAttribute.attrType){
-				let CurrentAttributeType = "";
-				if (Array.isArray(CurrentAttribute.attrType)){
-					CurrentAttributeType = CurrentAttribute.attrType[0];
+export function validateObjectTree(iobObjects: ObjectWithValue[]): void {
+	// Sort by ID
+	iobObjects.sort(function(a, b){
+		return (a.id.split(".").length - b.id.split(".").length) || a.id.localeCompare(b.id);
+	})
+	// Verfify all sub-states have a superior device, channel or folder
+	// Foreach sub-state (. in id)
+	iobObjects.filter(item => item.object.type.split(".").length > 0).filter(item => item.object.type === "state").forEach(iobObj => {
+		const iobIDPath = iobObj.id.split(".");
+		if (iobIDPath.length > 0){
+			// Remove last element (=name of state)
+			iobIDPath.pop();
+			let iobIDBasePath = "";
+			iobIDPath.forEach(iobIDName =>{
+				if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length > 1){
+					throw `Duplicated object ${iobIDBasePath}${iobIDName} defined`
 				}else{
-					CurrentAttributeType = CurrentAttribute.attrType;
+					if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length === 0){
+						throw `No superior object declared for ${iobIDPath.join(".")}`
+					}
+					iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).forEach(iobObj =>{
+						if ((iobObj.object.type === "device" || iobObj.object.type === "channel" || iobObj.object.type === "folder") === false){
+							throw `No correct superior object declared for ${iobIDPath.join(".")}`
+						}
+					})
+				}
+				iobIDBasePath = `${iobIDBasePath}${iobIDName}.`;
+			})
+		}
+	})
+}
+
+export type SyncObjectsOptions = {
+	/** What to do with existing objects */
+	overwriteExisting?: boolean;
+} & (
+	| {
+		/** Ignore objects that are no longer needed */
+		removeUnused?: false;
+		except?: undefined;
+	}
+	| {
+		/** Remove objects that are no longer needed */
+		removeUnused: true;
+		/** Object IDs matching this filter are not removed */
+		except?: string | string[] | RegExp | ((id: string) => boolean);
+	}
+)
+
+/**
+ * Synchronizes a list of objects into the ioBroker objects DB
+ * @param adapterInstance The instance of the current ioBroker adapter
+ * @param iobObjects The desired list of objects that should exist after this call
+ * @param options Can be used to influence the behavior (overwriting and removing existing objects)
+ */
+export async function syncObjects(adapterInstance: ioBroker.Adapter, iobObjects: ObjectWithValue[], options: SyncObjectsOptions = {}): Promise<void> {
+	// Parse options and choose defaults
+	const { overwriteExisting = false, removeUnused = false, except } = options;
+
+	// Ensure that the entire object tree is complete and no intermediate objects are missing
+	validateObjectTree(iobObjects);
+
+	// Find out which objects are new, which are going to be overwritten and which might need to be deleted
+	const existingObjects = Object.values(await adapterInstance.getAdapterObjectsAsync());
+	// Using Sets allows us to ignore duplicates (which shouldn't happen, but you never know)
+	const existingObjectIDs = new Set(existingObjects.map(o => o._id));
+	const desiredObjectIDs = new Set(iobObjects.map(o => o.id));
+
+	// Objects that exist but are no longer needed
+	const unusedIDs = new Set([...existingObjectIDs].filter(id => !desiredObjectIDs.has(id)));
+	// TODO: Use this so we can merge changed objects instead of completely overwriting them
+	// // Objects that don't exist yet
+	// const newIDs = new Set([...desiredObjectIDs].filter(id => !existingObjectIDs.has(id)));
+	// // Objects that already exist and should be kept
+	// const existingIDs = new Set([...desiredObjectIDs].filter(id => existingObjectIDs.has(id)));
+
+	// Clean up unused objects if desired
+	if (removeUnused) {
+		// Create a matcher function to check which unused IDs to keep
+		const shouldKeep: (id: string) => boolean = !except ? () => true
+			: typeof except === "string" ? (id) => id === except
+				: Array.isArray(except) ? (id) => except.includes(id)
+					: util.types.isRegExp(except) ? (id) => except.test(id)
+						: typeof except === "function" ? (id) => except(id)
+							: () => true;
+
+		for (const id of unusedIDs) {
+			if (!shouldKeep(id)) await adapterInstance.delObjectAsync(id);
+		}
+	}
+
+	// Create new objects (and update existing if desired)
+	for (const obj of iobObjects) {
+		if (!overwriteExisting) {
+			await adapterInstance.setObjectNotExistsAsync(obj.id, obj.object);
+		} else {
+			await adapterInstance.setObjectAsync(obj.id, obj.object);
+		}
+		if (obj.value !== undefined) {
+			await adapterInstance.setStateAsync(obj.id, { val: obj.value, ack: true });
+		}
+	}
+}
+
+export function createTemplateObjectDefinition(objectType: ObjectTypes, role?: ObjectRoles): TemplateObjectDefinition {
+	// Getting Definition for current type
+	const iobResTemplate = ObjectAttributes.objectCommonSchemas[objectType];
+	// Temporary result object
+	let objectCommon: Record<string, any> = {} ;
+	if (iobResTemplate.attrMandatory) {
+		// Adding mandatory attributes
+		for (const attrName of iobResTemplate.attrMandatory as CommonAttributes[]) {
+			// @ts-expect-error While the common attributes are not without error, this won't work
+			const attrDefinition: CommonAttributeSchema = ObjectAttributes.commonAttributes[attrName];
+			// Take first or single attrType, check for further attributes
+			if (attrDefinition.attrType) {
+				// If an attribute type is defined, create a property with the correct type
+				let defaultAttributeType: string;
+				if (Array.isArray(attrDefinition.attrType)) {
+					defaultAttributeType = attrDefinition.attrType[0];
+				} else {
+					defaultAttributeType = attrDefinition.attrType;
 				}
 				//Setting type for type attribute
-				if (key === "type"){
-					ResultCommon[key] = CurrentAttributeType;
-				}else{
+				if (attrName === "type") {
+					objectCommon[attrName] = defaultAttributeType;
+				} else {
 					// Setting value for key
-					switch (CurrentAttributeType){
+					switch (defaultAttributeType) {
 						case "string":
-							ResultCommon[key] = "";
+							objectCommon[attrName] = "";
 							break;
 						case "number":
-							ResultCommon[key] = 0;
+							objectCommon[attrName] = 0;
 							break;
 						case "boolean":
-							ResultCommon[key] = true;
+							objectCommon[attrName] = true;
 							break;
 						case "object":
-							ResultCommon[key] = new Object;
+							objectCommon[attrName] = {};
 							break;
 						case "array":
-							ResultCommon[key] = [];
+							objectCommon[attrName] = [];
 							break;
 					}
 				}
 			}
-		});
-	}
-	// If role is defined set role
-	if (role && (objtype === "state" || objtype === "channel")){
-		ResultCommon["role"] = role;
-		const iobRoleTemplate: {[k: string]: any} = Roles.roles_definition[role];
-		for (const key in iobRoleTemplate){
-			ResultCommon[key]  = iobRoleTemplate[key];
 		}
 	}
-	// Return correct type
-	switch (objtype){
-		case "state":
-			return {type: objtype, common: ResultCommon}  as iobStateObject;
-			break;
-		case "channel":
-			return {type: objtype, common: ResultCommon}  as iobChannelObject;
-			break;
-		case "device":
-			return {type: objtype, common: ResultCommon}  as iobDeviceObject;
-			break;
-		case"folder":
-			return {type: objtype, common: ResultCommon}  as iobFolderObject;
-			break;
-		case "enum":
-			return {type: objtype, common: ResultCommon}  as iobEnumObject;
-			break;
-		default:
-			return {type: objtype, common: ResultCommon as ioBroker.OtherCommon};
-			break;
+	// If role is defined set role
+	if (role && (objectType === "state" || objectType === "channel")) {
+		objectCommon = {
+			...objectCommon,
+			role,
+			...Roles.roles_definition[role],
+		};
 	}
+	return {
+		type: objectType,
+		common: objectCommon as any
+	};
 }

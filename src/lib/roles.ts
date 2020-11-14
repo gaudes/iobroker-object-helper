@@ -1,4 +1,9 @@
-export const roles_definition = {
+import { RoleSchema } from "./types";
+
+/** Makes sure that the role definitions below have the desired form and we didn't mistype anything */
+function validateRoles<T extends Record<keyof T, RoleSchema>>(roles: T): T { return roles; }
+
+export const roles_definition = validateRoles({
 	"state":{
 		"category":"other",
 		"desc":"General purpose",
@@ -237,8 +242,8 @@ export const roles_definition = {
 		"read":true,
 		"write":false,
 		"unit":[
-			"�C",
-			"�F",
+			"°C",
+			"°F",
 			"K"
 		]
 	},
@@ -451,7 +456,7 @@ export const roles_definition = {
 		"type":"number",
 		"read":true,
 		"write":false,
-		"unit":"�"
+		"unit":"°"
 	},
 	"value.sun.azimuth":{
 		"category":"value",
@@ -459,7 +464,7 @@ export const roles_definition = {
 		"type":"number",
 		"read":true,
 		"write":false,
-		"unit":"�"
+		"unit":"°"
 	},
 	"value.voltage":{
 		"category":"value",
@@ -677,7 +682,7 @@ export const roles_definition = {
 		"type":"number",
 		"read":true,
 		"write":true,
-		"unit":"�"
+		"unit":"°"
 	},
 	"level.color.saturation":{
 		"category":"level",
@@ -1391,8 +1396,8 @@ export const roles_definition = {
 		"read":true,
 		"write":false,
 		"unit":[
-			"�C",
-			"�F",
+			"°C",
+			"°F",
 			"K"
 		]
 	},
@@ -1406,8 +1411,8 @@ export const roles_definition = {
 		"read":true,
 		"write":false,
 		"unit":[
-			"�C",
-			"�F",
+			"°C",
+			"°F",
 			"K"
 		]
 	},
@@ -1421,8 +1426,8 @@ export const roles_definition = {
 		"read":true,
 		"write":false,
 		"unit":[
-			"�C",
-			"�F",
+			"°C",
+			"°F",
 			"K"
 		]
 	},
@@ -1436,8 +1441,8 @@ export const roles_definition = {
 		"read":true,
 		"write":false,
 		"unit":[
-			"�C",
-			"�F",
+			"°C",
+			"°F",
 			"K"
 		]
 	},
@@ -1451,8 +1456,8 @@ export const roles_definition = {
 		"read":true,
 		"write":false,
 		"unit":[
-			"�C",
-			"�F",
+			"°C",
+			"°F",
 			"K"
 		]
 	},
@@ -1532,10 +1537,7 @@ export const roles_definition = {
 			"value",
 			"weather"
 		],
-		"desc":[
-			"Minimum wind speed over a specific time range",
-			" normal 24 hours"
-		],
+		"desc": "Minimum wind speed over a specific time range (normal 24 hours)",
 		"type":"number",
 		"read":true,
 		"write":false,
@@ -1572,7 +1574,7 @@ export const roles_definition = {
 		"read":true,
 		"write":false,
 		"unit":[
-			"�"
+			"°"
 		]
 	},
 	"value.direction.max.wind":{
@@ -1585,7 +1587,7 @@ export const roles_definition = {
 		"read":true,
 		"write":false,
 		"unit":[
-			"�"
+			"°"
 		]
 	},
 	"value.direction.min.wind":{
@@ -1598,7 +1600,7 @@ export const roles_definition = {
 		"read":true,
 		"write":false,
 		"unit":[
-			"�"
+			"°"
 		]
 	},
 	"weather.direction.wind":{
@@ -1976,7 +1978,7 @@ export const roles_definition = {
 		"read":true,
 		"write":false,
 		"unit":[
-			"�"
+			"°"
 		]
 	},
 	"weather.direction.wind.forecast.*":{
@@ -2015,8 +2017,8 @@ export const roles_definition = {
 		"read":true,
 		"write":false,
 		"unit":[
-			"�C",
-			"�F",
+			"°C",
+			"°F",
 			"K"
 		]
 	},
@@ -2031,8 +2033,8 @@ export const roles_definition = {
 		"read":true,
 		"write":false,
 		"unit":[
-			"�C",
-			"�F",
+			"°C",
+			"°F",
 			"K"
 		]
 	},
@@ -2192,7 +2194,7 @@ export const roles_definition = {
 			"date"
 		],
 		"desc":"Start at date",
-		"type":"string,number",
+		"type":["string","number"],
 		"read":true,
 		"write":true
 	},
@@ -2202,7 +2204,7 @@ export const roles_definition = {
 			"date"
 		],
 		"desc":"End at date",
-		"type":"string,number",
+		"type":["string","number"],
 		"read":true,
 		"write":true
 	},
@@ -2290,6 +2292,4 @@ export const roles_definition = {
 		"read":true,
 		"write":true
 	}
-};
-
-// module.exports = {roles: roles_definition};
+});

@@ -1,16 +1,13 @@
-// This combination of types defines the possible shapes of the template objects
-type TemplateObjectWorker<T extends ioBroker.AnyObject> = Pick<T, "type" | "common">;
-type TemplateObject =
-	| TemplateObjectWorker<ioBroker.StateObject>
-	| TemplateObjectWorker<ioBroker.ChannelObject>
-	| TemplateObjectWorker<ioBroker.DeviceObject>
-	| TemplateObjectWorker<ioBroker.FolderObject>
-	| TemplateObjectWorker<ioBroker.EnumObject>
-	| TemplateObjectWorker<ioBroker.OtherObject>;
+import { TemplateObjectDefinition } from "./types";
 
 // This type is used to statically validate the templates below for correct type and correct properties
 type Validated<T extends Record<keyof T, any>> = {
-	[key in keyof T]: T[key] extends { type: ioBroker.ObjectType } ? TemplateObject & { type: T[key]["type"] } : TemplateObject;
+	// If @types/iobroker has a definition for this object type, ...
+	[key in keyof T]: T[key] extends { type: ioBroker.ObjectType }
+		// ... select it
+		? TemplateObjectDefinition & { type: T[key]["type"] }
+		// ... otherwise use the default
+		: TemplateObjectDefinition;
 }
 
 // Essentially a no-op but we need it to use the templates property to validate itself
