@@ -35,7 +35,7 @@ export const templates = validateType({
 		common: {
 			role: "state",
 			name: "JSON",
-			type: "json",
+			type: "string",
 			read: true,
 			write: true,
 			def: "{}",
