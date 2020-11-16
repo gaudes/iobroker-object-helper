@@ -96,7 +96,7 @@ export function validateObjectTree(iobObjects: ObjectWithValue[]): void {
 				if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length > 1){
 					throw `Duplicated object ${iobIDBasePath}${iobIDName} defined`
 				}else{
-					if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length === 0){
+					if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length === 2){
 						throw `No superior object declared for ${iobIDPath.join(".")}`
 					}
 					iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).forEach(iobObj =>{
