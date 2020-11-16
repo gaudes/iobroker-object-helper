@@ -14,10 +14,22 @@ type Validated<T extends Record<keyof T, any>> = {
 function validateType<T extends Validated<T>>(objs: T): T { return objs; }
 
 export const templates = validateType({
+	device: {
+		type: "device",
+		common: {
+			name: "Device",
+		},
+	},
 	channel: {
 		type: "channel",
 		common: {
 			name: "Channel",
+		},
+	},
+	folder: {
+		type: "folder",
+		common: {
+			name: "Folder",
 		},
 	},
 	html: {
