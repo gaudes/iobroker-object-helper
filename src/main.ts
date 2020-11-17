@@ -88,7 +88,7 @@ export function validateObjectTree(iobObjects: ObjectWithValue[]): void {
 	// Foreach sub-state (. in id)
 	iobObjects.filter(item => item.object.type.split(".").length > 0).filter(item => item.object.type === "state").forEach(iobObj => {
 		const iobIDPath = iobObj.id.split(".");
-		if (iobIDPath.length > 0){
+		if (iobIDPath.length > 2){
 			// Remove last element (=name of state)
 			iobIDPath.pop();
 			let iobIDBasePath = "";
@@ -96,7 +96,7 @@ export function validateObjectTree(iobObjects: ObjectWithValue[]): void {
 				if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length > 1){
 					throw `Duplicated object ${iobIDBasePath}${iobIDName} defined`
 				}else{
-					if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length === 2){
+					if (iobIDPath.indexOf(iobIDName) >= 2 && iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length === 0){
 						throw `No superior object declared for ${iobIDPath.join(".")}`
 					}
 					iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).forEach(iobObj =>{
