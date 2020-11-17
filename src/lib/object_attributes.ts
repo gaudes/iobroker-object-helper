@@ -1,12 +1,12 @@
-import { CommonAttributes, CommonAttributeSchema, ObjectCommonSchema, ObjectTypes } from "./types";
+import { CommonAttributes, CommonAttributeSchema, ObjectCommonSchema } from "./types";
 
 // This type is used to statically validate the schema below for correct type and correct properties
 type ValidatedCommonSchema<T extends Record<keyof T, any>> = {
 	// For all missing object types add the required type
-	[key in Exclude<ObjectTypes, keyof T>]: ObjectCommonSchema<ioBroker.AnyObject & { type: key }>;
+	[key in Exclude<ioBroker.ObjectType, keyof T>]: ObjectCommonSchema<ioBroker.AnyObject & { type: key }>;
 } & {
 	// For each property in the given object, check if @types/iobroker has this object type
-	[key in keyof T]: key extends ObjectTypes
+	[key in keyof T]: key extends ioBroker.ObjectType
 		// If yes, try to combine the definition and what we were given
 		? ObjectCommonSchema<ioBroker.AnyObject & { type: key }> & T[key]
 		// If not, make a type error, so we can add it to @types/iobroker
@@ -34,9 +34,7 @@ export const objectCommonSchemas = validateCommonSchema({
 			"desc",
 			"min",
 			"max",
-			// step currently missing in official definition, but integrated in schema.md
-			// Issue in Adapter-Core opened: https://github.com/ioBroker/adapter-core/issues/283
-			//"step",
+			"step",
 			"unit",
 			"states",
 			"workingID",
@@ -81,15 +79,15 @@ export const objectCommonSchemas = validateCommonSchema({
 		"desc": "A host that runs a controller process",
 		"attrMandatory": [
 			"name",
-			"version",
-			"platform",
+			"title",
+			"installedVersion",
 			"cmd",
 			"hostname",
+			"type",
+			"platform",
 			"address"
 		],
-		"attrOptional": [
-			"process"
-		]
+		"attrOptional": []
 	},
 	"adapter": {
 		"desc": "The default config of an adapter. Presence also indicates that the adapter is successfully installed.",
@@ -109,11 +107,12 @@ export const objectCommonSchemas = validateCommonSchema({
 			"type"
 		],
 		"attrOptional": [
-			"adminTab.fa-icon",
-			"adminTab.ignoreConfigUpdate",
-			"adminTab.link",
-			"adminTab.name",
-			"adminTab.singleton",
+			// TODO: We cannot currently check nested properties
+			// "adminTab.fa-icon",
+			// "adminTab.ignoreConfigUpdate",
+			// "adminTab.link",
+			// "adminTab.name",
+			// "adminTab.singleton",
 			"allowInit",
 			"availableModes",
 			"blockly",
@@ -134,12 +133,13 @@ export const objectCommonSchemas = validateCommonSchema({
 			"noConfig",
 			"noIntro",
 			"noRepository",
-			"noGit",
+			"nogit",
 			"nondeletable",
 			"onlyWWW",
-			"osDependencies.darwin",
-			"osDependencies.linux",
-			"osDependencies.win32",
+			// TODO: We cannot currently check nested properties
+			// "osDependencies.darwin",
+			// "osDependencies.linux",
+			// "osDependencies.win32",
 			"os",
 			"preserveSettings",
 			"restartAdapters",
@@ -153,7 +153,7 @@ export const objectCommonSchemas = validateCommonSchema({
 			"subscribe",
 			"supportCustoms",
 			"supportStopInstance",
-			"unchanged",
+			// "unchanged",
 			"unsafePerm",
 			"wakeup",
 			"webByVersion",
@@ -162,10 +162,9 @@ export const objectCommonSchemas = validateCommonSchema({
 			"webPreSettings",
 			"webservers",
 			"welcomeScreen",
-			"welcomeScreen.order",
+			// "welcomeScreen.order",
 			"welcomeScreenPro",
-			"wwwDontUpload",
-			"protectedNative"
+			"wwwDontUpload"
 		]
 	},
 	"instance": {
@@ -183,14 +182,19 @@ export const objectCommonSchemas = validateCommonSchema({
 		"desc": "Configuration object"
 	},
 	"script": {
-		"desc": "Represenst a script",
+		"desc": "Represents a script",
 		"attrMandatory": [
-			"platform",
+			"engineType",
 			"enabled",
 			"source"
 		],
 		"attrOptional": [
-			"engine"
+			"engine",
+			"debug",
+			"verbose",
+			"sourceHash",
+			"compiled",
+			"declarations"
 		]
 	},
 	"user": {
@@ -207,7 +211,8 @@ export const objectCommonSchemas = validateCommonSchema({
 			"members"
 		],
 		"attrOptional": [
-			"desc"
+			// TODO: I didn't find this in the documentation
+			// "desc"
 		]
 	},
 	// Info is in Type Definitions, but missing in documentation
@@ -217,12 +222,10 @@ export const objectCommonSchemas = validateCommonSchema({
 		"attrMandatory": [
 			"name"
 		]
+	},
+	"chart": {
+		"desc": "Represents a chart (e.g. for flot)"
 	}
-	// Same as step, included in schema but missing in defintion
-	// Same issue as step: https://github.com/ioBroker/adapter-core/issues/283
-	//"chart": {
-	//	"desc": "Represents a chart (e.g. for flot)"
-	//}
 });
 
 // This type is used to statically validate the schema below for correct type and correct properties
@@ -273,12 +276,12 @@ export const commonAttributes = validateCommonAttributes({
 		"attrType": "number"
 	},
 	// Currently missing in type definitions, Issue create
-	//"step": {
-	//	"desc": "Increase/decrease interval",
-	//	"type": "number",
-	//	"write": true,
-	//	"attrType": "number"
-	//},
+	"step": {
+		"desc": "Increase/decrease interval",
+		"type": "number",
+		"write": true,
+		"attrType": "number"
+	},
 	"unit": {
 		"desc": "The unit of the value",
 		"type": "number",

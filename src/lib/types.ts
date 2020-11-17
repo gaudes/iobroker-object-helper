@@ -1,15 +1,6 @@
 // This combination of types defines the possible shapes of the template objects based on what the ioBroker type definitions offer us
-type TemplateObjectWorker<T extends ioBroker.AnyObject> = Pick<T, "type" | "common">;
-export type TemplateObjectDefinition =
-	| TemplateObjectWorker<ioBroker.StateObject>
-	| TemplateObjectWorker<ioBroker.ChannelObject>
-	| TemplateObjectWorker<ioBroker.DeviceObject>
-	| TemplateObjectWorker<ioBroker.FolderObject>
-	| TemplateObjectWorker<ioBroker.EnumObject>
-	| TemplateObjectWorker<ioBroker.OtherObject>;
-
-// TODO: in ioBroker.ObjectType are only state, channel and device defined
-export type ObjectTypes = ioBroker.AnyObject["type"];
+type TemplateObjectWorker<T extends ioBroker.AnyObject> = T extends ioBroker.AnyObject ? Pick<T, "type" | "common"> : never;
+export type TemplateObjectDefinition = TemplateObjectWorker<ioBroker.AnyObject>;
 
 /** Defines the mandatory and optional common attributes of an ioBroker object */
 export interface ObjectCommonSchema<T extends ioBroker.AnyObject> {
