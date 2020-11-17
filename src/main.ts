@@ -1,13 +1,13 @@
 import { templates as Templates } from "./lib/predefined_objects";
 import * as Roles from "./lib/roles";
 import * as ObjectAttributes from "./lib/object_attributes";
-import { CommonAttributes, CommonAttributeSchema, ObjectTypes, TemplateObjectDefinition } from "./lib/types";
+import { CommonAttributes, CommonAttributeSchema, TemplateObjectDefinition } from "./lib/types";
 import * as util from "util";
 import cloneDeep from "clone-deep";
 
-export interface ObjectWithValue {
+export interface ObjectWithValue<T extends ioBroker.ObjectType = ioBroker.ObjectType> {
 	id: string;
-	object: ioBroker.SettableObject;
+	object: ioBroker.SettableObject & {type: T};
 	value?: string | number | boolean | ioBroker.State | ioBroker.SettableState | null;
 }
 
@@ -36,7 +36,7 @@ export type BuildObjectOptions = {
 	}
 	| {
 		/** or use the given object type */
-		objectType: ObjectTypes,
+		objectType: ioBroker.ObjectType,
 		/** The role to use for the object */
 		role: ObjectRoles,
 	}
@@ -46,6 +46,14 @@ function ensureNamespace(namespace: string, objectId: string): string {
 	if (objectId.startsWith(`${namespace}.`)) return objectId;
 	return `${namespace}.${objectId}`;
 }
+
+// Shadow the implementation signature. If we used this complex type on the implemantation, we would have to deal with
+// many type assertions
+export function buildObject<T extends BuildObjectOptions>(
+	adapterInstance: ioBroker.Adapter, options: T
+): T extends { objectType: "template", template: infer U } ? (U extends keyof typeof Templates ? ObjectWithValue<(typeof Templates[U])["type"]> : never)
+	: T extends { objectType: ioBroker.ObjectType } ? ObjectWithValue<T["objectType"]>
+		: ObjectWithValue<"state">;
 
 export function buildObject(adapterInstance: ioBroker.Adapter, options: BuildObjectOptions): ObjectWithValue {
 	let definition: TemplateObjectDefinition;
@@ -65,13 +73,20 @@ export function buildObject(adapterInstance: ioBroker.Adapter, options: BuildObj
 			common: { "name": options.name, "role": "state", "read": true, "write": true, "type": "string", "desc": "" }
 		}
 	}
-	if (options.description != undefined && definition.type !== "device" && definition.type !== "enum") {
+	if (
+		options.description != undefined && (
+			definition.type === "state"
+			|| definition.type === "channel")
+	) {
 		definition.common.desc = options.description;
 	}
 
-	const ret: ObjectWithValue = {
+	// Turn off object type validation here - we know what we're doing
+	const ret: ObjectWithValue<any> = {
 		id: ensureNamespace(adapterInstance.namespace, options.id),
-		object: { ...definition, native: {} },
+		// Some object types have required properties on `native`
+		// Since we're not creating them, disable that check
+		object: { ...definition, native: {} as any },
 	};
 	if (options.value !== undefined) {
 		ret.value = options.value;
@@ -183,7 +198,7 @@ export async function syncObjects(adapterInstance: ioBroker.Adapter, iobObjects:
 	}
 }
 
-export function createTemplateObjectDefinition(objectType: ObjectTypes, role?: ObjectRoles): TemplateObjectDefinition {
+export function createTemplateObjectDefinition(objectType: ioBroker.ObjectType, role?: ObjectRoles): TemplateObjectDefinition {
 	// Getting Definition for current type
 	const iobResTemplate = ObjectAttributes.objectCommonSchemas[objectType];
 	// Temporary result object
