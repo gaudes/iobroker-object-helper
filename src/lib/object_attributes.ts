@@ -675,5 +675,3 @@ export const commonAttributes = validateCommonAttributes({
 		"attrType": "string"
 	}*/
 });
-
-module.exports = { objectTypes: objectCommonSchemas, commonAttributes };
