@@ -1,7 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.commonAttributes = exports.objectTypes = void 0;
-exports.objectTypes = {
+exports.commonAttributes = exports.objectCommonSchemas = void 0;
+// Essentially a no-op but we need it to use the schema property to validate itself
+// We make sure that there are no unknown properties defined below (to keep this in sync with @types/iobroker)
+// Missing properties will raise an error elsewhere
+function validateCommonSchema(objs) { return objs; }
+exports.objectCommonSchemas = validateCommonSchema({
     "state": {
         "desc": "State. Parents should be of type channel, device, instance or host.",
         "attrMandatory": [
@@ -22,9 +26,11 @@ exports.objectTypes = {
             "states",
             "workingID",
             "custom",
-            "history",
-            "history.*.changesOnly",
-            "history.*.enabled"
+            "history"
+            // Wildcard matching does not work in auto-validation and does not fit definitions
+            //,
+            //"history.*.changesOnly",
+            //"history.*.enabled"
         ]
     },
     "channel": {
@@ -60,15 +66,15 @@ exports.objectTypes = {
         "desc": "A host that runs a controller process",
         "attrMandatory": [
             "name",
-            "version",
-            "platform",
+            "title",
+            "installedVersion",
             "cmd",
             "hostname",
+            "type",
+            "platform",
             "address"
         ],
-        "attrOptional": [
-            "process"
-        ]
+        "attrOptional": []
     },
     "adapter": {
         "desc": "The default config of an adapter. Presence also indicates that the adapter is successfully installed.",
@@ -88,11 +94,12 @@ exports.objectTypes = {
             "type"
         ],
         "attrOptional": [
-            "adminTab.fa-icon",
-            "adminTab.ignoreConfigUpdate",
-            "adminTab.link",
-            "adminTab.name",
-            "adminTab.singleton",
+            // TODO: We cannot currently check nested properties
+            // "adminTab.fa-icon",
+            // "adminTab.ignoreConfigUpdate",
+            // "adminTab.link",
+            // "adminTab.name",
+            // "adminTab.singleton",
             "allowInit",
             "availableModes",
             "blockly",
@@ -113,12 +120,13 @@ exports.objectTypes = {
             "noConfig",
             "noIntro",
             "noRepository",
-            "noGit",
+            "nogit",
             "nondeletable",
             "onlyWWW",
-            "osDependencies.darwin",
-            "osDependencies.linux",
-            "osDependencies.win32",
+            // TODO: We cannot currently check nested properties
+            // "osDependencies.darwin",
+            // "osDependencies.linux",
+            // "osDependencies.win32",
             "os",
             "preserveSettings",
             "restartAdapters",
@@ -132,7 +140,7 @@ exports.objectTypes = {
             "subscribe",
             "supportCustoms",
             "supportStopInstance",
-            "unchanged",
+            // "unchanged",
             "unsafePerm",
             "wakeup",
             "webByVersion",
@@ -141,10 +149,9 @@ exports.objectTypes = {
             "webPreSettings",
             "webservers",
             "welcomeScreen",
-            "welcomeScreen.order",
+            // "welcomeScreen.order",
             "welcomeScreenPro",
-            "wwwDontUpload",
-            "protectedNative"
+            "wwwDontUpload"
         ]
     },
     "instance": {
@@ -162,14 +169,19 @@ exports.objectTypes = {
         "desc": "Configuration object"
     },
     "script": {
-        "desc": "Represenst a script",
+        "desc": "Represents a script",
         "attrMandatory": [
-            "platform",
+            "engineType",
             "enabled",
             "source"
         ],
         "attrOptional": [
-            "engine"
+            "engine",
+            "debug",
+            "verbose",
+            "sourceHash",
+            "compiled",
+            "declarations"
         ]
     },
     "user": {
@@ -186,14 +198,24 @@ exports.objectTypes = {
             "members"
         ],
         "attrOptional": [
-            "desc"
+        // TODO: I didn't find this in the documentation
+        // "desc"
+        ]
+    },
+    // Info is in Type Definitions, but missing in documentation
+    // See issue: https://github.com/ioBroker/adapter-core/issues/283
+    "info": {
+        "desc": "Information object",
+        "attrMandatory": [
+            "name"
         ]
     },
     "chart": {
         "desc": "Represents a chart (e.g. for flot)"
     }
-};
-exports.commonAttributes = {
+});
+function validateCommonAttributes(objs) { return objs; }
+exports.commonAttributes = validateCommonAttributes({
     "type": {
         "desc": "Represents the data type of the object",
         "type": [
@@ -203,9 +225,12 @@ exports.commonAttributes = {
             "array",
             "object",
             "mixed",
-            "file",
-            "meta.user",
-            "meta.folder"
+            "file"
+            // Meta is only allowed when object type is meta, see schema.md:
+            // common.type (optional - (default is mixed==any type) (possible values: number, string, boolean, array, object, mixed, file). As exception the objects with type meta could have common.type=meta.user or meta.folder
+            // Meta is defined above without attributes
+            // "meta.user",
+            // "meta.folder"
         ],
         "attrType": "string"
     },
@@ -225,8 +250,9 @@ exports.commonAttributes = {
         "write": true,
         "attrType": "number"
     },
+    // Currently missing in type definitions, Issue create
     "step": {
-        "desc": "Increase/decrease intervall",
+        "desc": "Increase/decrease interval",
         "type": "number",
         "write": true,
         "attrType": "number"
@@ -236,7 +262,9 @@ exports.commonAttributes = {
         "type": "number",
         "attrType": "string"
     },
-    "def": {
+    // Default value depends on type of state
+    // So attrType depends also on type of state
+    /*"def": {
         "desc": "Default value",
         "attrType": [
             "string",
@@ -245,7 +273,7 @@ exports.commonAttributes = {
             "array",
             "object"
         ]
-    },
+    },*/
     "defAck": {
         "desc": "If common.def is set the ACK flag is set to this value",
         "attrType": "boolean"
@@ -273,14 +301,14 @@ exports.commonAttributes = {
     "workingID": {
         "desc": "If this state has helper state WORKING. Here must be written the full name or just the last part if the first parts are the same with actual. Used for HM.LEVEL and normally has value 'WORKING'",
         "type": "string",
-        "role": "indicator.working",
         "attrType": "string"
     },
     "custom": {
         "desc": "The structure with custom settings for specific adapters. Like {'influxdb.0': {'enabled': true, 'alias': 'name'}}. enabled attribute is required and if it is not true, the whole attribute will be deleted.",
         "attrType": "object"
     },
-    "history": {
+    // common.history is correct, but lacks of a type, is only in path with instance referenced, see below also.
+    /*"history": {
         "desc": "History function needs the history adapter or any other storage adapter of type history\n fifo length is reduced to min when max is hit. set to null or leave undefined to use defaults\n for a list of transports see history adapter README"
     },
     "history.*.changesOnly": {
@@ -291,11 +319,18 @@ exports.commonAttributes = {
         "desc": "History enabled for this state",
         "attrType": "boolean"
     },
+    */
     "members": {
         "desc": "Holds an array with member IDs",
         "attrType": "array"
     },
-    "adminTab.fa-icon": {
+    "icon": {
+        "desc": "Name of the local icon (should be located in subdirectory 'admin')",
+        "attrType": "string"
+    }
+    // Below are attributes of special objects like adapter, host, etc.
+    // These are defined in definitions as OtherCommon with any attributes
+    /*"adminTab.fa-icon": {
         "desc": "Font-Awesome icon name for TAB.",
         "attrType": "string"
     },
@@ -370,10 +405,6 @@ exports.commonAttributes = {
     "getHistory": {
         "desc": "True if adapter supports getHistory message",
         "attrType": "boolean"
-    },
-    "icon": {
-        "desc": "Name of the local icon (should be located in subdirectory 'admin')",
-        "attrType": "string"
     },
     "installedVersion": {
         "desc": "Installed version of adapter, includes source path.",
@@ -620,7 +651,6 @@ exports.commonAttributes = {
     "host": {
         "desc": "Host on which the instance is running.",
         "attrType": "string"
-    }
-};
-module.exports = { objectTypes: exports.objectTypes, commonAttributes: exports.commonAttributes };
+    }*/
+});
 //# sourceMappingURL=object_attributes.js.map
