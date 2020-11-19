@@ -89,6 +89,9 @@ export function buildObject(adapterInstance: ioBroker.Adapter, options: BuildObj
 				definition.common.type = definition.common.type[0];
 			}
 		}
+		if (Array.isArray(definition.common.unit)){
+			definition.common.unit = definition.common.unit[0];
+		}
 	}
 
 	// Turn off object type validation here - we know what we're doing
