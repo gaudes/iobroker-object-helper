@@ -81,6 +81,16 @@ export function buildObject(adapterInstance: ioBroker.Adapter, options: BuildObj
 		definition.common.desc = options.description;
 	}
 
+	if (definition.type === "state"){
+		if (Array.isArray(definition.common.type)){
+			if (options.value && definition.common.type.includes(typeof(options.value)) === true){
+				definition.common.type = typeof(options.value) as ioBroker.CommonType;
+			}else{
+				definition.common.type = definition.common.type[0];
+			}
+		}
+	}
+
 	// Turn off object type validation here - we know what we're doing
 	const ret: ObjectWithValue<any> = {
 		id: ensureNamespace(adapterInstance.namespace, options.id),
