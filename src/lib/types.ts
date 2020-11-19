@@ -34,7 +34,6 @@ export interface CommonAttributeSchema {
 }
 
 export interface RoleSchema {
-	category: string | string[];
 	desc: string;
 	type?: ioBroker.CommonType | ioBroker.CommonType[];
 	read: boolean;
