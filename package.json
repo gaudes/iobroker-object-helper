@@ -44,7 +44,7 @@
     "watch:ts": "tsc -p tsconfig.build.json --watch",
     "watch": "npm run watch:ts",
     "lint": "eslint --ext .ts src",
-    "test": "mocha build/test --exit"
+    "test": "mocha test/test.ts --exit"
   },
   "bugs": {
     "url": "https://github.com/gaudes/iobroker-object-helper/issues"

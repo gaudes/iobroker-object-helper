@@ -21,27 +21,28 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const chai_1 = require("chai");
 const iobHelper = __importStar(require("./main"));
+const Adapter = { namespace: "test.0" };
 //#region Test buildObject
 describe("Test buildObject", () => {
     it("Build channel object by template", () => {
-        const iobObjChannel1 = iobHelper.buildObject({ namespace: "test.0" }, { id: "channel1", name: "channel1", objectType: "template", template: "channel" });
-        //console.log(JSON.stringify(iobObjChannel1));
+        const iobObjChannel1 = iobHelper.buildObject(Adapter, { id: "channel1", name: "channel1", objectType: "template", template: "channel" });
+        console.log(JSON.stringify(iobObjChannel1));
         chai_1.expect(iobObjChannel1).to.have.keys(["id", "object"]);
-        chai_1.expect(iobObjChannel1.id).to.equal("test.0.channel1");
+        chai_1.expect(iobObjChannel1).to.deep.equal({ id: "test.0.channel1" });
         chai_1.expect(iobObjChannel1.object).to.have.keys(["type", "common", "native"]);
         chai_1.expect(iobObjChannel1.object.common.name).to.equal("channel1");
     });
     it("Build state object by template", () => {
-        const iobObjStateJSON = iobHelper.buildObject({ namespace: "test.0" }, { id: "statejson", name: "statejson", objectType: "template", template: "json" });
+        const iobObjStateJSON = iobHelper.buildObject(Adapter, { id: "statejson", name: "statejson", objectType: "template", template: "json" });
         //console.log(JSON.stringify(iobObjStateJSON));
         chai_1.expect(iobObjStateJSON).to.have.keys(["id", "object"]);
-        chai_1.expect(iobObjStateJSON.id).to.equal("test.0.statejson");
+        chai_1.expect(iobObjStateJSON).to.equal("test.0.statejson");
         chai_1.expect(iobObjStateJSON.object).to.have.keys(["type", "common", "native"]);
         chai_1.expect(iobObjStateJSON.object.common).to.have.keys(["role", "name", "type", "read", "write", "def"]);
         chai_1.expect(iobObjStateJSON.object.common.name).to.equal("statejson");
     });
     it("Build state object with role json", () => {
-        const iobObjStateJSON = iobHelper.buildObject({ namespace: "test.0" }, { id: "statejson", name: "statejson", objectType: "state", role: "json" });
+        const iobObjStateJSON = iobHelper.buildObject(Adapter, { id: "statejson", name: "statejson", objectType: "state", role: "json" });
         //console.log(JSON.stringify(iobObjStateJSON));
         chai_1.expect(iobObjStateJSON).to.have.keys(["id", "object"]);
         chai_1.expect(iobObjStateJSON.id).to.equal("test.0.statejson");
@@ -51,7 +52,7 @@ describe("Test buildObject", () => {
         chai_1.expect(iobObjStateJSON.object.common.type).to.equal("string");
     });
     it("Build state object with role value", () => {
-        const iobObjStateNumber = iobHelper.buildObject({ namespace: "test.0" }, { id: "statenumber", name: "statenumber", objectType: "state", role: "value" });
+        const iobObjStateNumber = iobHelper.buildObject(Adapter, { id: "statenumber", name: "statenumber", objectType: "state", role: "value" });
         iobObjStateNumber.object.common.unit = "°C";
         //console.log(JSON.stringify(iobObjStateJSON));
         chai_1.expect(iobObjStateNumber).to.have.keys(["id", "object"]);
@@ -67,26 +68,26 @@ describe("Test buildObject", () => {
 //#region Test validateObject
 describe("Test validateObject", () => {
     it("Validate object with successfull result (simple)", () => {
-        const iobObjs = Array(iobHelper.buildObject({ namespace: "test.0" }, { id: "channel1", name: "channel1", objectType: "template", template: "channel" }));
-        iobObjs.push(iobHelper.buildObject({ namespace: "test.0" }, { id: "channel1.state1", name: "channel1_state1", objectType: "template", template: "json" }));
+        const iobObjs = Array(iobHelper.buildObject(Adapter, { id: "channel1", name: "channel1", objectType: "template", template: "channel" }));
+        iobObjs.push(iobHelper.buildObject(Adapter, { id: "channel1.state1", name: "channel1_state1", objectType: "template", template: "json" }));
         chai_1.expect(iobHelper.validateObjectTree.bind(iobHelper.validateObjectTree, iobObjs)).to.not.throw();
     });
     it("Validate object with unsuccessfull result (simple)", () => {
-        const iobObjs = Array(iobHelper.buildObject({ namespace: "test.0" }, { id: "channel1.state1", name: "state1", objectType: "template", template: "json" }));
+        const iobObjs = Array(iobHelper.buildObject(Adapter, { id: "channel1.state1", name: "state1", objectType: "template", template: "json" }));
         chai_1.expect(iobHelper.validateObjectTree.bind(iobHelper.validateObjectTree, iobObjs)).to.throw("No superior object declared for test.0.channel1");
     });
     it("Validate object with successfull result (complex)", () => {
-        const iobObjs = Array(iobHelper.buildObject({ namespace: "test.0" }, { id: "foobar", name: "channel1", objectType: "template", template: "channel" }));
-        iobObjs.push(iobHelper.buildObject({ namespace: "test.0" }, { id: "foobar.state", name: "channel1_state1", objectType: "template", template: "json" }));
-        iobObjs.push(iobHelper.buildObject({ namespace: "test.0" }, { id: "foobar.foobar", name: "folder1", objectType: "template", template: "folder" }));
-        iobObjs.push(iobHelper.buildObject({ namespace: "test.0" }, { id: "foobar.foobar.foobar", name: "channel1_folder1_state1", objectType: "template", template: "json" }));
+        const iobObjs = Array(iobHelper.buildObject(Adapter, { id: "foobar", name: "channel1", objectType: "template", template: "channel" }));
+        iobObjs.push(iobHelper.buildObject(Adapter, { id: "foobar.state", name: "channel1_state1", objectType: "template", template: "json" }));
+        iobObjs.push(iobHelper.buildObject(Adapter, { id: "foobar.foobar", name: "folder1", objectType: "template", template: "folder" }));
+        iobObjs.push(iobHelper.buildObject(Adapter, { id: "foobar.foobar.foobar", name: "channel1_folder1_state1", objectType: "template", template: "json" }));
         chai_1.expect(iobHelper.validateObjectTree.bind(iobHelper.validateObjectTree, iobObjs)).to.not.throw();
     });
     it("Validate object with unsuccessfull result (complex)", () => {
-        const iobObjs = Array(iobHelper.buildObject({ namespace: "test.0" }, { id: "foobar", name: "channel1", objectType: "template", template: "channel" }));
-        iobObjs.push(iobHelper.buildObject({ namespace: "test.0" }, { id: "foobar.state", name: "channel1_state1", objectType: "template", template: "json" }));
-        iobObjs.push(iobHelper.buildObject({ namespace: "test.0" }, { id: "foobar.foobar", name: "channel1_state2", objectType: "template", template: "json" }));
-        iobObjs.push(iobHelper.buildObject({ namespace: "test.0" }, { id: "foobar.foobar.foobar", name: "channel1_state2", objectType: "template", template: "json" }));
+        const iobObjs = Array(iobHelper.buildObject(Adapter, { id: "foobar", name: "channel1", objectType: "template", template: "channel" }));
+        iobObjs.push(iobHelper.buildObject(Adapter, { id: "foobar.state", name: "channel1_state1", objectType: "template", template: "json" }));
+        iobObjs.push(iobHelper.buildObject(Adapter, { id: "foobar.foobar", name: "channel1_state2", objectType: "template", template: "json" }));
+        iobObjs.push(iobHelper.buildObject(Adapter, { id: "foobar.foobar.foobar", name: "channel1_state2", objectType: "template", template: "json" }));
         chai_1.expect(iobHelper.validateObjectTree.bind(iobHelper.validateObjectTree, iobObjs)).to.throw("No correct superior object declared for test.0.foobar.foobar");
     });
 });
