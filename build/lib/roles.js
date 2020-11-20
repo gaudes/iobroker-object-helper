@@ -1,7 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.roles_definition = void 0;
-exports.roles_definition = {
+/** Makes sure that the role definitions below have the desired form and we didn't mistype anything */
+function validateRoles(roles) { return roles; }
+exports.roles_definition = validateRoles({
     "state": {
         "category": "other",
         "desc": "General purpose",
@@ -240,8 +242,8 @@ exports.roles_definition = {
         "read": true,
         "write": false,
         "unit": [
-            "�C",
-            "�F",
+            "°C",
+            "°F",
             "K"
         ]
     },
@@ -454,7 +456,7 @@ exports.roles_definition = {
         "type": "number",
         "read": true,
         "write": false,
-        "unit": "�"
+        "unit": "°"
     },
     "value.sun.azimuth": {
         "category": "value",
@@ -462,7 +464,7 @@ exports.roles_definition = {
         "type": "number",
         "read": true,
         "write": false,
-        "unit": "�"
+        "unit": "°"
     },
     "value.voltage": {
         "category": "value",
@@ -680,7 +682,7 @@ exports.roles_definition = {
         "type": "number",
         "read": true,
         "write": true,
-        "unit": "�"
+        "unit": "°"
     },
     "level.color.saturation": {
         "category": "level",
@@ -1394,8 +1396,8 @@ exports.roles_definition = {
         "read": true,
         "write": false,
         "unit": [
-            "�C",
-            "�F",
+            "°C",
+            "°F",
             "K"
         ]
     },
@@ -1409,8 +1411,8 @@ exports.roles_definition = {
         "read": true,
         "write": false,
         "unit": [
-            "�C",
-            "�F",
+            "°C",
+            "°F",
             "K"
         ]
     },
@@ -1424,8 +1426,8 @@ exports.roles_definition = {
         "read": true,
         "write": false,
         "unit": [
-            "�C",
-            "�F",
+            "°C",
+            "°F",
             "K"
         ]
     },
@@ -1439,8 +1441,8 @@ exports.roles_definition = {
         "read": true,
         "write": false,
         "unit": [
-            "�C",
-            "�F",
+            "°C",
+            "°F",
             "K"
         ]
     },
@@ -1454,8 +1456,8 @@ exports.roles_definition = {
         "read": true,
         "write": false,
         "unit": [
-            "�C",
-            "�F",
+            "°C",
+            "°F",
             "K"
         ]
     },
@@ -1535,10 +1537,7 @@ exports.roles_definition = {
             "value",
             "weather"
         ],
-        "desc": [
-            "Minimum wind speed over a specific time range",
-            " normal 24 hours"
-        ],
+        "desc": "Minimum wind speed over a specific time range (normal 24 hours)",
         "type": "number",
         "read": true,
         "write": false,
@@ -1575,7 +1574,7 @@ exports.roles_definition = {
         "read": true,
         "write": false,
         "unit": [
-            "�"
+            "°"
         ]
     },
     "value.direction.max.wind": {
@@ -1588,7 +1587,7 @@ exports.roles_definition = {
         "read": true,
         "write": false,
         "unit": [
-            "�"
+            "°"
         ]
     },
     "value.direction.min.wind": {
@@ -1601,7 +1600,7 @@ exports.roles_definition = {
         "read": true,
         "write": false,
         "unit": [
-            "�"
+            "°"
         ]
     },
     "weather.direction.wind": {
@@ -1979,7 +1978,7 @@ exports.roles_definition = {
         "read": true,
         "write": false,
         "unit": [
-            "�"
+            "°"
         ]
     },
     "weather.direction.wind.forecast.*": {
@@ -2018,8 +2017,8 @@ exports.roles_definition = {
         "read": true,
         "write": false,
         "unit": [
-            "�C",
-            "�F",
+            "°C",
+            "°F",
             "K"
         ]
     },
@@ -2034,8 +2033,8 @@ exports.roles_definition = {
         "read": true,
         "write": false,
         "unit": [
-            "�C",
-            "�F",
+            "°C",
+            "°F",
             "K"
         ]
     },
@@ -2195,7 +2194,7 @@ exports.roles_definition = {
             "date"
         ],
         "desc": "Start at date",
-        "type": "string,number",
+        "type": ["string", "number"],
         "read": true,
         "write": true
     },
@@ -2205,7 +2204,7 @@ exports.roles_definition = {
             "date"
         ],
         "desc": "End at date",
-        "type": "string,number",
+        "type": ["string", "number"],
         "read": true,
         "write": true
     },
@@ -2293,6 +2292,5 @@ exports.roles_definition = {
         "read": true,
         "write": true
     }
-};
-module.exports = { roles: exports.roles_definition };
+});
 //# sourceMappingURL=roles.js.map
