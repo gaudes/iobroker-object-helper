@@ -47,6 +47,35 @@ function ensureNamespace(namespace: string, objectId: string): string {
 	return `${namespace}.${objectId}`;
 }
 
+function getTypefromValue(value:any): ioBroker.CommonType|undefined {
+	switch (typeof(value)){
+		case "object":
+			// Handle typeof [] === "object"
+			if (Array.isArray(value)){
+				return "array";
+			// Handle typeof {} === "object"
+			}else if(Object.prototype.toString.call(value) === "[object Object]"){
+				return "object";
+			// typeof null === "object"
+			}
+		case "number":
+			return "number";
+		case "string":
+			return "string";
+		case "boolean":
+			return "boolean";
+	}
+}
+
+function selectTypefromArray(value: any, AllowedTypes: ioBroker.CommonType[]): ioBroker.CommonType{
+	const TypeOfValue = getTypefromValue(value) as ioBroker.CommonType;
+	if (AllowedTypes.includes(TypeOfValue)){
+		return TypeOfValue;
+	}else{
+		throw "Invalid type of value"
+	}
+}
+
 // Shadow the implementation signature. If we used this complex type on the implemantation, we would have to deal with
 // many type assertions
 export function buildObject<T extends BuildObjectOptions>(
@@ -80,11 +109,12 @@ export function buildObject(adapterInstance: ioBroker.Adapter, options: BuildObj
 	) {
 		definition.common.desc = options.description;
 	}
-
+	// The templates may contain arrays for some values that are no arrays in ioBroker.
+	// We find them and pin them to a single value.
 	if (definition.type === "state"){
 		if (Array.isArray(definition.common.type)){
-			if (options.value && definition.common.type.includes(typeof(options.value)) === true){
-				definition.common.type = typeof(options.value) as ioBroker.CommonType;
+			if (options.value){
+				definition.common.type = selectTypefromArray(options.value, definition.common.type)
 			}else{
 				definition.common.type = definition.common.type[0];
 			}
