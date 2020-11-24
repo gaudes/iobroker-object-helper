@@ -326,16 +326,22 @@ export const roles_definition = validateRoles({
 		"write":false
 	},
 	"value.blind":{
-		"desc":"Blind position",
+		"desc":"Actual position of blind (100% = fully open, 0% = fully closed)",
 		"type":"number",
 		"read":true,
-		"write":false
+		"write":false,
+		"unit": "%",
+		"min": 0,
+		"max": 100
 	},
 	"value.tilt":{
-		"desc":"Tilt position",
+		"desc":"Actual tilt position (100% = fully open, 0% = fully closed)",
 		"type":"number",
 		"read":true,
-		"write":false
+		"write":false,
+		"unit": "%",
+		"min": 0,
+		"max": 100
 	},
 	"value.lock":{
 		"desc":"Lock position",
@@ -539,10 +545,13 @@ export const roles_definition = validateRoles({
 		"write":true
 	},
 	"level.blind":{
-		"desc":"Blind setpoint",
+		"desc":"Set blind position (100% = fully open, 0% = fully closed)",
 		"type":"number",
 		"read":true,
-		"write":true
+		"write":true,
+		"unit": "%",
+		"min": 0,
+		"max": 100
 	},
 	"level.temperature":{
 		"desc":"Temperature setpoint",
@@ -649,10 +658,13 @@ export const roles_definition = validateRoles({
 		"write":true
 	},
 	"level.tilt":{
-		"desc":"Tilt setpoint",
+		"desc":"Set the tilt position of blinds (100% = fully open, 0% = fully closed)",
 		"type":"number",
 		"read":true,
-		"write":true
+		"write":true,
+		"unit": "%",
+		"min": 0,
+		"max": 100
 	},
 	"level.speed.fan": {
 		"desc":"Speed of fan",
