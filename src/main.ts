@@ -72,7 +72,7 @@ function selectTypefromArray(value: any, AllowedTypes: ioBroker.CommonType[]): i
 	if (AllowedTypes.includes(TypeOfValue)){
 		return TypeOfValue;
 	}else{
-		throw "Invalid type of value"
+		throw `Invalid type ${TypeOfValue || typeof(value)} of value ${value} for allowed types ${AllowedTypes.join(",")} `;
 	}
 }
 
@@ -113,7 +113,7 @@ export function buildObject(adapterInstance: ioBroker.Adapter, options: BuildObj
 	// We find them and pin them to a single value.
 	if (definition.type === "state"){
 		if (Array.isArray(definition.common.type)){
-			if (options.value){
+			if (options.value != null){
 				definition.common.type = selectTypefromArray(options.value, definition.common.type)
 			}else{
 				definition.common.type = definition.common.type[0];
