@@ -4,6 +4,7 @@ import { RoleSchema } from "./types";
 function validateRoles<T extends Record<keyof T, RoleSchema>>(roles: T): T { return roles; }
 
 export const roles_definition = validateRoles({
+	//#region Common roles
 	"state":{
 		"desc":"General purpose",
 		"read":true,
@@ -48,6 +49,8 @@ export const roles_definition = validateRoles({
 		"read":true,
 		"write":true
 	},
+	//#endregion
+	//#region Sensor roles (boolean, read-only)
 	"sensor.window":{
 		"desc":"Window open/closed",
 		"type":"boolean",
@@ -118,29 +121,24 @@ export const roles_definition = validateRoles({
 		"desc":"Noise sensor",
 		"type":"boolean",
 		"read":true,
-		"write":false,
-		"unit":"dB"
+		"write":false
 	},
+	//#endregion
+	//#region Button roles (booleans, write-only)
 	"button":{
 		"desc":"Button",
 		"type":"boolean",
 		"read":false,
 		"write":true
 	},
-	"button.long":{
-		"desc":"Button long press",
-		"type":"boolean",
-		"read":false,
-		"write":true
-	},
-	"button.press":{
-		"desc":"Button press",
-		"type":"boolean",
-		"read":false,
-		"write":true
-	},
 	"button.stop":{
 		"desc":"Button stop",
+		"type":"boolean",
+		"read":false,
+		"write":true
+	},
+	"button.stop.tilt":{
+		"desc":"Button stop for tilt",
 		"type":"boolean",
 		"read":false,
 		"write":true
@@ -158,7 +156,31 @@ export const roles_definition = validateRoles({
 		"write":true
 	},
 	"button.open.window":{
-		"desc":"Button",
+		"desc":"Button open window",
+		"type":"boolean",
+		"read":false,
+		"write":true
+	},
+	"button.open.blind":{
+		"desc":"Button open blind",
+		"type":"boolean",
+		"read":false,
+		"write":true
+	},
+	"button.open.tilt":{
+		"desc":"Button open tilt",
+		"type":"boolean",
+		"read":false,
+		"write":true
+	},
+	"button.close.blind":{
+		"desc":"Button close blind",
+		"type":"boolean",
+		"read":false,
+		"write":true
+	},
+	"button.close.tilt":{
+		"desc":"Button close tilt",
 		"type":"boolean",
 		"read":false,
 		"write":true
@@ -181,6 +203,22 @@ export const roles_definition = validateRoles({
 		"read":false,
 		"write":true
 	},
+	//#endregion
+	//#region Button as sensor roles (boolean, read-only)
+	"button.long":{
+		"desc":"Button long press",
+		"type":"boolean",
+		"read":true,	// Exception, can be used as Button or Button as sensor
+		"write":true
+	},
+	"button.press":{
+		"desc":"Button press",
+		"type":"boolean",
+		"read":true,
+		"write":false
+	},
+	//#endregion
+	//#region Value roles (number, read-only)
 	"value":{
 		"desc":"Value",
 		"type":"number",
@@ -196,7 +234,8 @@ export const roles_definition = validateRoles({
 			"0":"CLOSED",
 			"1":"TILTED",
 			"2":"OPEN"
-		}
+		},
+		"unit": "null"
 	},
 	"value.temperature":{
 		"desc":"Temperature",
@@ -217,7 +256,6 @@ export const roles_definition = validateRoles({
 		"unit":"lx"
 	},
 	"value.min":{
-		"category":"value",
 		"desc":"Value minimum",
 		"type":"number",
 		"read":true,
@@ -245,13 +283,6 @@ export const roles_definition = validateRoles({
 			"V"
 		]
 	},
-	"value.gas":{
-		"desc":"Gas concentration",
-		"type":"number",
-		"read":true,
-		"write":false,
-		"unit":"ppm"
-	},
 	"value.valve":{
 		"desc":"Valve position",
 		"type":"number",
@@ -262,23 +293,24 @@ export const roles_definition = validateRoles({
 		"desc":"Time",
 		"type":"number",
 		"read":true,
-		"write":false
+		"write":false,
+		"unit": "null"
 	},
 	"value.interval":{
-		"desc":"Interval time",
+		"desc":"Interval time in seconds",
 		"type":"number",
 		"read":true,
 		"write":false,
 		"unit":"sec"
 	},
 	"value.date":{
-		"desc":"Date",
+		"desc":"Date, should not be used anymore",
 		"type":"string",
 		"read":true,
 		"write":false
 	},
 	"value.datetime":{
-		"desc":"Date and time",
+		"desc":"Date and time, should not be used anymore",
 		"type":"string",
 		"read":true,
 		"write":false
@@ -311,7 +343,11 @@ export const roles_definition = validateRoles({
 		"desc":"Power consumption (Ws, Wh, kWh)",
 		"type":"number",
 		"read":true,
-		"write":false
+		"write":false,
+		"unit":[
+			"Wh",
+			"KWh"
+		]
 	},
 	"value.direction":{
 		"desc":"Direction",
@@ -382,13 +418,15 @@ export const roles_definition = validateRoles({
 		"desc":"Severity (priority)",
 		"type":"number",
 		"read":true,
-		"write":false
+		"write":false,
+		"unit": "null"
 	},
 	"value.warning":{
 		"desc":"Warning",
 		"type":"number",
 		"read":true,
-		"write":false
+		"write":false,
+		"unit": "null"
 	},
 	"value.sun.elevation":{
 		"desc":"Sun elevation",
@@ -437,8 +475,40 @@ export const roles_definition = validateRoles({
 		"desc":"Blood sugar (mmol, mgdl)",
 		"type":"number",
 		"read":true,
-		"write":false
+		"write":false,
+		"unit":[
+			"mmol",
+			"mgdl"
+		]
 	},
+	// Vacuum cleaner
+	"value.water":{
+		"desc":"water level for vacuum cleaner",
+		"type":"number",
+		"read":true,
+		"write":false,
+		"unit": "%",
+		"min": 0,
+		"max": 100
+	},
+	"value.waste":{
+		"desc":"waste bin level for vacuum cleaner",
+		"type":"number",
+		"read":true,
+		"write":false,
+		"unit": "%",
+		"min": 0,
+		"max": 100
+	},
+	"value.state":{
+		"desc":"state for vacuum cleaner (home, cleaning, pause)",
+		"type":"number",
+		"read":true,
+		"write":false,
+		"unit": "null"
+	},
+	//#endregion
+	//#region Indicator roles (boolean, read-only)
 	"indicator":{
 		"desc":"Indicator",
 		"type":"boolean",
@@ -487,6 +557,12 @@ export const roles_definition = validateRoles({
 		"read":true,
 		"write":false
 	},
+	"indicator.maintenance.waste":{
+		"desc":"Indicates waste full for vacuum cleaners",
+		"type":"boolean",
+		"read":true,
+		"write":false
+	},
 	"indicator.lowbat":{
 		"desc":"Indicates low battery",
 		"type":"boolean",
@@ -523,6 +599,8 @@ export const roles_definition = validateRoles({
 		"read":true,
 		"write":false
 	},
+	//#endregion
+	//#region Level roles (number, read-write)
 	"level":{
 		"desc":"Level general",
 		"type":"number",
@@ -557,7 +635,12 @@ export const roles_definition = validateRoles({
 		"desc":"Temperature setpoint",
 		"type":"number",
 		"read":true,
-		"write":true
+		"write":true,
+		"unit":[
+			"°C",
+			"°F",
+			"K"
+		]
 	},
 	"level.valve":{
 		"desc":"Valve setpoint",
@@ -569,31 +652,37 @@ export const roles_definition = validateRoles({
 		"desc":"Level for color red",
 		"type":"number",
 		"read":true,
-		"write":true
+		"write":true,
+		"unit": "null"
 	},
 	"level.color.green":{
 		"desc":"Level for color green",
 		"type":"number",
 		"read":true,
-		"write":true
+		"write":true,
+		"unit": "null"
 	},
 	"level.color.blue":{
 		"desc":"Level for color blue",
 		"type":"number",
 		"read":true,
-		"write":true
+		"write":true,
+		"unit": "null"
 	},
 	"level.color.white":{
 		"desc":"Level for color white",
 		"type":"number",
 		"read":true,
-		"write":true
+		"write":true,
+		"unit": "null"
 	},
 	"level.color.hue":{
 		"desc":"Color in hue",
 		"type":"number",
 		"read":true,
 		"write":true,
+		"min": 0,
+		"max": 360,
 		"unit":"°"
 	},
 	"level.color.saturation":{
@@ -618,7 +707,8 @@ export const roles_definition = validateRoles({
 		"desc":"Color temperature",
 		"type":"number",
 		"read":true,
-		"write":true
+		"write":true,
+		"unit": "°K"
 	},
 	"level.timer":{
 		"desc":"Timer",
@@ -666,7 +756,8 @@ export const roles_definition = validateRoles({
 		"min": 0,
 		"max": 100
 	},
-	"level.speed.fan": {
+	// Air condition or thermostat
+	"level.mode.fan": {
 		"desc":"Speed of fan",
 		"type": [
 			"string",
@@ -674,7 +765,6 @@ export const roles_definition = validateRoles({
 		],
 		"read":true,
 		"write":true,
-		"unit":"%",
 		"states":{
 			"0":"AUTO",
 			"1":"high",
@@ -682,9 +772,10 @@ export const roles_definition = validateRoles({
 			"3":"medium",
 			"4":"quiet",
 			"5":"turbo"
-		}
+		},
+		"unit": "null"
 	},
-	"level.swing": {
+	"level.mode.swing": {
 		"desc":"Angle or enumeration",
 		"type":"string",
 		"read":true,
@@ -694,7 +785,8 @@ export const roles_definition = validateRoles({
 			"1":"horizontal",
 			"2":"vertical",
 			"3":"stationary"
-		}
+		},
+		"unit": "null"
 	},
 	"level.mode.thermostat":{
 		"desc":"Thermostat mode",
@@ -709,8 +801,46 @@ export const roles_definition = validateRoles({
 			"4":"FAN_ONLY",
 			"5":"HEAT",
 			"6":"OFF"
-		}
+		},
+		"unit": "null"
 	},
+	// Vacuum cleaner
+	"level.mode.cleanup": {
+		"desc":"Mode for Vacuum cleaner",
+		"type": [
+			"string",
+			"number"
+		],
+		"read":true,
+		"write":true,
+		"states":{
+			"0":"AUTO",
+			"1":"eco",
+			"2":"express",
+			"3":"normal",
+			"4":"quiet",
+		},
+		"unit": "null"
+	},
+	"level.mode.work": {
+		"desc":"Mode for Vacuum cleaner",
+		"type": [
+			"string",
+			"number"
+		],
+		"read":true,
+		"write":true,
+		"states":{
+			"0":"AUTO",
+			"1":"fast",
+			"2":"medium",
+			"3":"slow",
+			"4":"turbo",
+		},
+		"unit": "null"
+	},
+	//#endregion
+	//#region Switch roles (boolean, read-write)
 	"switch":{
 		"desc":"Switch gerneral",
 		"type":"boolean",
@@ -729,8 +859,8 @@ export const roles_definition = validateRoles({
 		"read":true,
 		"write":true
 	},
-	"switch.window":{
-		"desc":"Window switch",
+	"switch.lock.window":{
+		"desc":"Window lock switch",
 		"type":"boolean",
 		"read":true,
 		"write":true
@@ -795,6 +925,8 @@ export const roles_definition = validateRoles({
 		"read":true,
 		"write":true
 	},
+	//#endregion
+	//#region Media roles
 	"button.play":{
 		"desc":"Media button play",
 		"type":"boolean",
@@ -815,6 +947,12 @@ export const roles_definition = validateRoles({
 	},
 	"button.pause":{
 		"desc":"Media button pause",
+		"type":"boolean",
+		"read":true,
+		"write":true
+	},
+	"switch.pause":{
+		"desc":"Media switch pause",
 		"type":"boolean",
 		"read":true,
 		"write":true
@@ -1012,34 +1150,11 @@ export const roles_definition = validateRoles({
 		"desc":"Track ID",
 		"type":"number",
 		"read":true,
-		"write":true
+		"write":true,
+		"unit": "null"
 	},
-	"media.track.add":{
-		"desc":"Add track",
-		"type":"string",
-		"read":true,
-		"write":true
-	},
-	"media.track.remove":{
-		"desc":"Remove track",
-		"type":"string",
-		"read":true,
-		"write":true
-	},
-	"media.playlist":{
-		"desc":"Play list as JSON",
-		"type":"object",
-		"read":true,
-		"write":true
-	},
-	"media.playlist.addtrack":{
-		"desc":"Add track to play list",
-		"type":"string",
-		"read":true,
-		"write":true
-	},
-	"media.playlist.removetrack":{
-		"desc":"Remove track to play list",
+	"media.add":{
+		"desc":"Add current playlist",
 		"type":"string",
 		"read":true,
 		"write":true
@@ -1047,6 +1162,12 @@ export const roles_definition = validateRoles({
 	"media.clear":{
 		"desc":"Clear actual play list",
 		"type":"boolean",
+		"read":true,
+		"write":true
+	},
+	"media.playlist":{
+		"desc":"Play list as JSON",
+		"type":"object",
 		"read":true,
 		"write":true
 	},
@@ -1066,7 +1187,8 @@ export const roles_definition = validateRoles({
 		"desc":"Jump over n elements positive/negative",
 		"type":"number",
 		"read":true,
-		"write":true
+		"write":true,
+		"unit": "null"
 	},
 	"media.content":{
 		"desc":"Content type",
@@ -1110,11 +1232,15 @@ export const roles_definition = validateRoles({
 		"read":true,
 		"write":true
 	},
+	//#endregion
+	//#region Health roles
 	"value.health.fat": {
 		"desc":"Body fat index",
 		"type":"number",
 		"read":true,
 		"write":false,
+		"min": 0,
+		"max": 100,
 		"unit":"%"
 	},
 	"value.health.weight": {
@@ -1131,7 +1257,8 @@ export const roles_definition = validateRoles({
 		"desc":"BMI index",
 		"type":"number",
 		"read":true,
-		"write":false
+		"write":false,
+		"unit": "null"
 	},
 	"value.health.calories": {
 		"desc":"Burned calories",
@@ -1153,6 +1280,8 @@ export const roles_definition = validateRoles({
 		"write":false,
 		"unit":"bpm"
 	},
+	//#endregion
+	//#region Weather roles
 	"value.temperature.windchill":{
 		"desc":"Felt temperature with wind",
 		"type":"number",
@@ -1213,6 +1342,8 @@ export const roles_definition = validateRoles({
 		"type":"number",
 		"read":true,
 		"write":false,
+		"min": 0,
+		"max": 100,
 		"unit":"%"
 	},
 	"value.humidity.min":{
@@ -1220,6 +1351,8 @@ export const roles_definition = validateRoles({
 		"type":"number",
 		"read":true,
 		"write":false,
+		"min": 0,
+		"max": 100,
 		"unit":"%"
 	},
 	"value.humidity.max":{
@@ -1227,6 +1360,8 @@ export const roles_definition = validateRoles({
 		"type":"number",
 		"read":true,
 		"write":false,
+		"min": 0,
+		"max": 100,
 		"unit":"%"
 	},
 	"value.speed.wind":{
@@ -1316,7 +1451,7 @@ export const roles_definition = validateRoles({
 		"read":true,
 		"write":true
 	},
-	"weekday":{
+	"dayofweek":{
 		"desc":"Weekday",
 		"type":"string",
 		"read":true,
@@ -1427,13 +1562,21 @@ export const roles_definition = validateRoles({
 		"desc":"Snowfall last hour",
 		"type":"number",
 		"read":true,
-		"write":false
+		"write":false,
+		"unit":[
+			"cm",
+			"m"
+		]
 	},
 	"value.snow.today":{
 		"desc":"Snowfall today",
 		"type":"number",
 		"read":true,
-		"write":false
+		"write":false,
+		"unit":[
+			"cm",
+			"m"
+		]
 	},
 	"value.snowline":{
 		"desc":"Snow line in meters above sea level",
@@ -1549,6 +1692,8 @@ export const roles_definition = validateRoles({
 		"type":"number",
 		"read":true,
 		"write":false,
+		"min": 0,
+		"max": 100,
 		"unit":"%"
 	},
 	"value.precipitation.forecast.*":{
@@ -1578,12 +1723,20 @@ export const roles_definition = validateRoles({
 		"write":false,
 		"unit":"mm"
 	},
+	"date.forecast.*":{
+		"desc":"Date for forecast, replace * with 0=today, 1=tomorrow, and so on",
+		"type":"string",
+		"read":true,
+		"write":true
+	},
 	"weather.icon.forecast.*":{
 		"desc":"URL to icon forecast for *, replace * with 1=tomorrow, 2=day after tomorrow, and so on",
 		"type":"string",
 		"read":true,
 		"write":false
 	},
+	//#endregion
+	//#region Info roles
 	"info.ip":{
 		"desc":"IP address of device",
 		"type":"string",
@@ -1597,7 +1750,7 @@ export const roles_definition = validateRoles({
 		"write":false
 	},
 	"info.name":{
-		"desc":"Name of *, could be the name of a device, service or what ever ",
+		"desc":"Name, could be the name of a device, service or what ever ",
 		"type":"string",
 		"read":true,
 		"write":false
@@ -1612,7 +1765,8 @@ export const roles_definition = validateRoles({
 		"desc":"Network port",
 		"type":"number",
 		"read":true,
-		"write":false
+		"write":false,
+		"unit": "null"
 	},
 	"info.standby":{
 		"desc":"Shows true if the device is in stand-by mode",
@@ -1644,6 +1798,8 @@ export const roles_definition = validateRoles({
 		"read":true,
 		"write":true
 	},
+	//#endregion
+	//#region Other roles
 	"url":{
 		"desc":"URL to what ever",
 		"type":"string",
@@ -1698,4 +1854,5 @@ export const roles_definition = validateRoles({
 		"read":true,
 		"write":true
 	}
+	//#endregion
 });
