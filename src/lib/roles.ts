@@ -1,5 +1,8 @@
 import { RoleSchema } from "./types";
 
+/* All described roles are based on official documentation
+ * https://github.com/ioBroker/ioBroker.docs/blob/master/docs/en/dev/stateroles.md */
+
 /** Makes sure that the role definitions below have the desired form and we didn't mistype anything */
 function validateRoles<T extends Record<keyof T, RoleSchema>>(roles: T): T { return roles; }
 
