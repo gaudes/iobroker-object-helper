@@ -92,11 +92,12 @@ export function validateObjectTree(iobObjects: ObjectWithValue[]): void {
 			// Remove last element (=name of state)
 			iobIDPath.pop();
 			let iobIDBasePath = "";
+			let CountPathDepth = 0;
 			iobIDPath.forEach(iobIDName =>{
 				if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length > 1){
 					throw `Duplicated object ${iobIDBasePath}${iobIDName} defined`
 				}else{
-					if (iobIDPath.indexOf(iobIDName) >= 2 && iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length === 0){
+					if (CountPathDepth >= 2 && iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length === 0){
 						throw `No superior object declared for ${iobIDPath.join(".")}`
 					}
 					iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).forEach(iobObj =>{
@@ -106,6 +107,7 @@ export function validateObjectTree(iobObjects: ObjectWithValue[]): void {
 					})
 				}
 				iobIDBasePath = `${iobIDBasePath}${iobIDName}.`;
+				CountPathDepth++;
 			})
 		}
 	})
