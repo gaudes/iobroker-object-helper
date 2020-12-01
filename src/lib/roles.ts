@@ -335,7 +335,7 @@ export const roles_definition = validateRoles({
 		"max": 100
 	},
 	"value.tilt":{
-		"desc":"Actual tilt position (100% = fully open, 0% = fully closed)",
+		"desc":"Actual tilt (100% = fully open, 0% = fully closed)",
 		"type":"number",
 		"read":true,
 		"write":false,
@@ -658,7 +658,7 @@ export const roles_definition = validateRoles({
 		"write":true
 	},
 	"level.tilt":{
-		"desc":"Set the tilt position of blinds (100% = fully open, 0% = fully closed)",
+		"desc":"Set the tilt of blinds (100% = fully open, 0% = fully closed)",
 		"type":"number",
 		"read":true,
 		"write":true,
