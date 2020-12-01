@@ -94,10 +94,11 @@ export function validateObjectTree(iobObjects: ObjectWithValue[]): void {
 			let iobIDBasePath = "";
 			let CountPathDepth = 0;
 			iobIDPath.forEach(iobIDName =>{
-				if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length > 1){
+				//if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length > 1){
+				if (iobObjects.some(item => item.id === `${iobIDBasePath}${iobIDName}`)){
 					throw `Duplicated object ${iobIDBasePath}${iobIDName} defined`
 				}else{
-					if (CountPathDepth >= 2 && iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length === 0){
+					if (CountPathDepth >= 2 && !iobObjects.some(item => item.id === `${iobIDBasePath}${iobIDName}`)){
 						throw `No superior object declared for ${iobIDPath.join(".")}`
 					}
 					iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).forEach(iobObj =>{
