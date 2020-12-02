@@ -146,15 +146,17 @@ export function validateObjectTree(iobObjects: ObjectWithValue[]): void {
 	// Foreach sub-state (. in id)
 	iobObjects.filter(item => item.object.type.split(".").length > 0).filter(item => item.object.type === "state").forEach(iobObj => {
 		const iobIDPath = iobObj.id.split(".");
-		if (iobIDPath.length > 0){
+		if (iobIDPath.length > 2){
 			// Remove last element (=name of state)
 			iobIDPath.pop();
 			let iobIDBasePath = "";
+			let CountPathDepth = 0;
 			iobIDPath.forEach(iobIDName =>{
-				if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length > 1){
+				//if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length > 1){
+				if (iobObjects.some(item => item.id === `${iobIDBasePath}${iobIDName}`)){
 					throw `Duplicated object ${iobIDBasePath}${iobIDName} defined`
 				}else{
-					if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length === 0){
+					if (CountPathDepth >= 2 && !iobObjects.some(item => item.id === `${iobIDBasePath}${iobIDName}`)){
 						throw `No superior object declared for ${iobIDPath.join(".")}`
 					}
 					iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).forEach(iobObj =>{
@@ -164,6 +166,7 @@ export function validateObjectTree(iobObjects: ObjectWithValue[]): void {
 					})
 				}
 				iobIDBasePath = `${iobIDBasePath}${iobIDName}.`;
+				CountPathDepth++;
 			})
 		}
 	})
