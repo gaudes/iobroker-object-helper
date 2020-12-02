@@ -238,7 +238,7 @@ export const roles_definition = validateRoles({
 			"1":"TILTED",
 			"2":"OPEN"
 		},
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"value.temperature":{
 		"desc":"Temperature",
@@ -297,7 +297,7 @@ export const roles_definition = validateRoles({
 		"type":"number",
 		"read":true,
 		"write":false,
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"value.interval":{
 		"desc":"Interval time in seconds",
@@ -422,14 +422,14 @@ export const roles_definition = validateRoles({
 		"type":"number",
 		"read":true,
 		"write":false,
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"value.warning":{
 		"desc":"Warning",
 		"type":"number",
 		"read":true,
 		"write":false,
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"value.sun.elevation":{
 		"desc":"Sun elevation",
@@ -508,7 +508,7 @@ export const roles_definition = validateRoles({
 		"type":"number",
 		"read":true,
 		"write":false,
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	//#endregion
 	//#region Indicator roles (boolean, read-only)
@@ -656,28 +656,28 @@ export const roles_definition = validateRoles({
 		"type":"number",
 		"read":true,
 		"write":true,
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"level.color.green":{
 		"desc":"Level for color green",
 		"type":"number",
 		"read":true,
 		"write":true,
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"level.color.blue":{
 		"desc":"Level for color blue",
 		"type":"number",
 		"read":true,
 		"write":true,
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"level.color.white":{
 		"desc":"Level for color white",
 		"type":"number",
 		"read":true,
 		"write":true,
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"level.color.hue":{
 		"desc":"Color in hue",
@@ -776,7 +776,7 @@ export const roles_definition = validateRoles({
 			"4":"quiet",
 			"5":"turbo"
 		},
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"level.mode.swing": {
 		"desc":"Angle or enumeration",
@@ -789,7 +789,7 @@ export const roles_definition = validateRoles({
 			"2":"vertical",
 			"3":"stationary"
 		},
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"level.mode.thermostat":{
 		"desc":"Thermostat mode",
@@ -805,7 +805,7 @@ export const roles_definition = validateRoles({
 			"5":"HEAT",
 			"6":"OFF"
 		},
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	// Vacuum cleaner
 	"level.mode.cleanup": {
@@ -823,7 +823,7 @@ export const roles_definition = validateRoles({
 			"3":"normal",
 			"4":"quiet",
 		},
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"level.mode.work": {
 		"desc":"Mode for Vacuum cleaner",
@@ -835,12 +835,12 @@ export const roles_definition = validateRoles({
 		"write":true,
 		"states":{
 			"0":"AUTO",
-			"1":"fast",
+			"1":"slow",
 			"2":"medium",
-			"3":"slow",
+			"3":"fast",
 			"4":"turbo",
 		},
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	//#endregion
 	//#region Switch roles (boolean, read-write)
@@ -1154,7 +1154,7 @@ export const roles_definition = validateRoles({
 		"type":"number",
 		"read":true,
 		"write":true,
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"media.add":{
 		"desc":"Add current playlist",
@@ -1191,7 +1191,7 @@ export const roles_definition = validateRoles({
 		"type":"number",
 		"read":true,
 		"write":true,
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"media.content":{
 		"desc":"Content type",
@@ -1261,7 +1261,7 @@ export const roles_definition = validateRoles({
 		"type":"number",
 		"read":true,
 		"write":false,
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"value.health.calories": {
 		"desc":"Burned calories",
@@ -1769,7 +1769,7 @@ export const roles_definition = validateRoles({
 		"type":"number",
 		"read":true,
 		"write":false,
-		"unit": "null"
+		"unit": "forbidden"
 	},
 	"info.standby":{
 		"desc":"Shows true if the device is in stand-by mode",
