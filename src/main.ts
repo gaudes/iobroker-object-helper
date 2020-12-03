@@ -1,7 +1,7 @@
 import { templates as Templates } from "./lib/predefined_objects";
 import * as Roles from "./lib/roles";
 import * as ObjectAttributes from "./lib/object_attributes";
-import { CommonAttributes, CommonAttributeSchema, TemplateObjectDefinition } from "./lib/types";
+import { CommonAttributes, CommonAttributeSchema, TemplateObjectDefinition, RoleSchema } from "./lib/types";
 import * as util from "util";
 import cloneDeep from "clone-deep";
 
@@ -137,6 +137,27 @@ export function buildObject(adapterInstance: ioBroker.Adapter, options: BuildObj
 	return ret;
 }
 
+export function validateObject(iobObject: ObjectWithValue): void{
+	// Verifying unit on states
+	if (iobObject.object.type === "state" && iobObject.object.common.role && iobObject.object.common.unit){
+		// Cast iobObject.object.common as StateCommon
+		const iobObjectCommon = iobObject.object.common as ioBroker.StateCommon;
+		// Get RoleDefinition
+		const RoleDefinition = (Roles.roles_definition as Record<string, RoleSchema>)[iobObjectCommon.role];
+		if (RoleDefinition.unit){
+			if (RoleDefinition.unit === "forbidden" && iobObjectCommon.unit){
+				throw `Unit is forbidden in Role ${iobObjectCommon.role} at State with ID ${iobObject.id}`;
+			}
+			if (!Array.isArray(RoleDefinition.unit) && RoleDefinition.unit !== iobObjectCommon.unit){
+				throw `Only Unit ${RoleDefinition.unit} is allowed in Role ${iobObjectCommon.role} at State with ID ${iobObject.id}`;
+			}
+			if (Array.isArray(RoleDefinition.unit) && !RoleDefinition.unit.some(item => item === iobObjectCommon.unit)){
+				throw `Only Units ${RoleDefinition.unit.join(",")} are allowed in Role ${iobObjectCommon.role} at State with ID ${iobObject.id}`;
+			}
+		}
+	}
+}
+
 export function validateObjectTree(iobObjects: ObjectWithValue[]): void {
 	// Sort by ID
 	iobObjects.sort(function(a, b){
@@ -198,6 +219,11 @@ export type SyncObjectsOptions = {
 export async function syncObjects(adapterInstance: ioBroker.Adapter, iobObjects: ObjectWithValue[], options: SyncObjectsOptions = {}): Promise<void> {
 	// Parse options and choose defaults
 	const { overwriteExisting = false, removeUnused = false, except } = options;
+
+	// Validate objects
+	iobObjects.forEach(iobObject =>{
+		validateObject(iobObject);
+	});
 
 	// Ensure that the entire object tree is complete and no intermediate objects are missing
 	validateObjectTree(iobObjects);
@@ -296,6 +322,10 @@ export function createTemplateObjectDefinition(objectType: ioBroker.ObjectType, 
 			role,
 			...Roles.roles_definition[role],
 		};
+	}
+	// Remove unit:forbidden
+	if (objectCommon.unit === "forbidden"){
+		delete objectCommon.unit;
 	}
 	return {
 		type: objectType,
