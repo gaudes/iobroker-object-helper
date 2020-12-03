@@ -1,5 +1,21 @@
 # iobroker-object-helper
 
+## Use in Adapter project
+
+Installation e.g. in Terminal window in VSCode:
+
+`npm install gaudes/iobroker-object-helper`
+
+An entry in package.json will be created:
+
+```
+  "dependencies": {
+    "@iobroker/adapter-core": "^2.4.0",
+    "iobroker-object-helper": "github:gaudes/iobroker-object-helper",
+    ...
+  },
+```
+
 ## Example usage:
 
 ### Creates initial array with a channel named "user":

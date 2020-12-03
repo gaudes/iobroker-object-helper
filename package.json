@@ -6,6 +6,10 @@
     "name": "Gaudes",
     "email": "ralf@gaudes.net"
   },
+  "contributors": [
+    "Gaudes <ralf@gaudes.net>",
+    "AlCalzone <d.griesel@gmx.net>"
+  ],
   "homepage": "https://github.com/gaudes/iobroker-object-helper",
   "license": "MIT",
   "keywords": [
@@ -17,8 +21,7 @@
     "url": "https://github.com/gaudes/iobroker-object-helper"
   },
   "dependencies": {
-    "clone-deep": "^4.0.1",
-    "matcher": "^3.0.0"
+    "clone-deep": "^4.0.1"
   },
   "devDependencies": {
     "@types/clone-deep": "^4.0.1",
@@ -37,6 +40,7 @@
     "chai": "^4.2.0"
   },
   "main": "build/main.js",
+  "types": "build/main.d.ts",
   "scripts": {
     "prebuild": "rimraf ./build",
     "build:ts": "tsc -p tsconfig.build.json",
