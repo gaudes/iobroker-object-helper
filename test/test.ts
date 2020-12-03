@@ -20,7 +20,6 @@ describe("Test buildObject", () =>{
 	it("Build state object with role value", () => {
 		const iobObjStateNumber = iobHelper.buildObject(Adapter, {id: "statenumber", name: "statenumber", objectType: "state", role: "value" });
 		iobObjStateNumber.object.common.unit = "°C";
-		console.log(JSON.stringify(iobObjStateNumber));
 		expect(iobObjStateNumber).to.be.eql({id:"test.0.statenumber",object:{type:"state",common:{name:"statenumber",read:true,write:false,role:"value",type:"number",desc:"Value",unit:"°C"},native:{}}});
 	});
 });
