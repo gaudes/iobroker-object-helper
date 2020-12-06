@@ -8,6 +8,8 @@ This helper supports Adapter developers for ioBroker with an easy interface for 
     * No longer required objects in ioBroker could be removed automatically, exceptions as string or regex possible
     * Overwrite ioBroker objects just as parameter
 
+The examples in this document are built on each other.
+
 Credits for JeyCee, who created the basic libraries we customized for this project:
 https://github.com/iobroker-community-adapters/iobroker-adapter-helpers/tree/master/definitions
 
@@ -40,41 +42,45 @@ For JavaScript-Adapter use
 const iobObjectHelper = require("iobroker-object-helper");
 ```
 
-## Functions
-
-### buildObject
+## Function buildObject
 This functions returns a validated ioBroker object.
 
 It has two main features:
 * Create object based on a template
 * Create a custom object based on a defined role
 
-Example usage:
+### Example usage
 
-#### Create initial array with a channel named "user":
+#### Create initial array with a channel named "user"
+
+Here we create our initial array "iobResult" of ioBroker objects with our first object, a channel called "user" based on our template for channels:
 
 TypeScript
 ```typescript
-const iobResult: iobObjectHelper.ObjectWithValue[] = Array(iobObjectHelper.buildObject(this,{id: "user", name: "user", objectType: "template", template: "channel"}));
+const iobResult: iobObjectHelper.ObjectWithValue[] =[ iobObjectHelper.buildObject(this,{id: "user", name: "user", objectType: "template", template: "channel"})];
 ```
 Javascript
 ```javascript
-const iobResult = Array(iobObjectHelper.buildObject(this,{id: "user", name: "user", objectType: "template", template: "channel"}));
+const iobResult = [iobObjectHelper.buildObject(this,{id: "user", name: "user", objectType: "template", template: "channel"})];
 ```
 
-### Adds a State with JSON data to array:
+### Adds a State with JSON data to array
+
+Here we add a state containing JSON data to our already created array "iobResult":
 
 ```typescript
 iobResult.push(iobObjectHelper.buildObject(this, {id: "user.json", name: "json", value: JSON.stringify(yourjsondata), objectType: "template", template: "json"}));
 ```
 
-### Adds State with a numeric userid to array:
+### Adds State with a numeric userid to array
+
+Here we add another state with a numeric value to our existing array "iobResult". This state is based on role "value":
 
 ```typescript
 iobResult.push(iobObjectHelper.buildObject(this, {id: "user.id", name: "userid", value: yournumericuserid, objectType: "state", role: "value", description: "Numeric User-ID"}));
 ```
 
-### syncObject
+## Function syncObject
 This functions saves your array of ioBroker objects to ioBroker.
 The complete tree in the array gets validated, so all devices, channels and folders must also be defined.
 
@@ -83,11 +89,17 @@ There are some options for this function:
 * removeUnused: Objects in ioBroker not anymore included in your array will be deleted
 * except: Elements excluded from deletion of removeUnused
 
-Example usage:
+### Example usage
 
-### Save Array of states and channel to ioBroker
+#### Save Array of states and channel to ioBroker
+
+After we created an array "iobResult" containing some ioBroker objects (one channel with two states) in the previous examples, we use now the function "syncObject" to save the complete array to ioBroker.
+* "this" is your adapter instance
+* "removeUnused: true" means that all other objects already existing in ioBroker and not included in our current array will be removed
+* "except /info.*/": All objects already existing and named like this regular expression (info followed by any character) will not be removed
+
 ```typescript
-await iobObjectHelper.syncObjects(this, iobResult,{ removeUnused: true, except: /(info.*/} )
+await iobObjectHelper.syncObjects(this, iobResult,{ removeUnused: true, except: /info.*/} )
 ```
 
 ## Changelog
