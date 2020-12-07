@@ -31,7 +31,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createTemplateObjectDefinition = exports.syncObjects = exports.validateObjectTree = exports.buildObject = void 0;
+exports.createTemplateObjectDefinition = exports.syncObjects = exports.validateObjectTree = exports.validateObject = exports.buildObject = void 0;
 const predefined_objects_1 = require("./lib/predefined_objects");
 const Roles = __importStar(require("./lib/roles"));
 const ObjectAttributes = __importStar(require("./lib/object_attributes"));
@@ -41,6 +41,35 @@ function ensureNamespace(namespace, objectId) {
     if (objectId.startsWith(`${namespace}.`))
         return objectId;
     return `${namespace}.${objectId}`;
+}
+function getTypefromValue(value) {
+    switch (typeof (value)) {
+        case "object":
+            // Handle typeof [] === "object"
+            if (Array.isArray(value)) {
+                return "array";
+                // Handle typeof {} === "object"
+            }
+            else if (Object.prototype.toString.call(value) === "[object Object]") {
+                return "object";
+                // typeof null === "object"
+            }
+        case "number":
+            return "number";
+        case "string":
+            return "string";
+        case "boolean":
+            return "boolean";
+    }
+}
+function selectTypefromArray(value, AllowedTypes) {
+    const TypeOfValue = getTypefromValue(value);
+    if (AllowedTypes.includes(TypeOfValue)) {
+        return TypeOfValue;
+    }
+    else {
+        throw `Invalid type ${TypeOfValue || typeof (value)} of value ${value} for allowed types ${AllowedTypes.join(",")} `;
+    }
 }
 function buildObject(adapterInstance, options) {
     let definition;
@@ -66,6 +95,21 @@ function buildObject(adapterInstance, options) {
         || definition.type === "channel")) {
         definition.common.desc = options.description;
     }
+    // The templates may contain arrays for some values that are no arrays in ioBroker.
+    // We find them and pin them to a single value.
+    if (definition.type === "state") {
+        if (Array.isArray(definition.common.type)) {
+            if (options.value != null) {
+                definition.common.type = selectTypefromArray(options.value, definition.common.type);
+            }
+            else {
+                definition.common.type = definition.common.type[0];
+            }
+        }
+        if (Array.isArray(definition.common.unit)) {
+            definition.common.unit = definition.common.unit[0];
+        }
+    }
     // Turn off object type validation here - we know what we're doing
     const ret = {
         id: ensureNamespace(adapterInstance.namespace, options.id),
@@ -79,36 +123,83 @@ function buildObject(adapterInstance, options) {
     return ret;
 }
 exports.buildObject = buildObject;
+function validateObject(iobObject) {
+    // Verifying unit on states
+    if (iobObject.object.type === "state" && iobObject.object.common.role && iobObject.object.common.unit) {
+        // Cast iobObject.object.common as StateCommon
+        const iobObjectCommon = iobObject.object.common;
+        // Get RoleDefinition
+        const RoleDefinition = Roles.roles_definition[iobObjectCommon.role];
+        if (RoleDefinition.unit) {
+            if (RoleDefinition.unit === "forbidden" && iobObjectCommon.unit) {
+                throw `Unit is forbidden in Role ${iobObjectCommon.role} at State with ID ${iobObject.id}`;
+            }
+            if (!Array.isArray(RoleDefinition.unit) && RoleDefinition.unit !== iobObjectCommon.unit) {
+                throw `Only Unit ${RoleDefinition.unit} is allowed in Role ${iobObjectCommon.role} at State with ID ${iobObject.id}`;
+            }
+            if (Array.isArray(RoleDefinition.unit) && !RoleDefinition.unit.some(item => item === iobObjectCommon.unit)) {
+                throw `Only Units ${RoleDefinition.unit.join(",")} are allowed in Role ${iobObjectCommon.role} at State with ID ${iobObject.id}`;
+            }
+        }
+    }
+}
+exports.validateObject = validateObject;
 function validateObjectTree(iobObjects) {
     // Sort by ID
     iobObjects.sort(function (a, b) {
         return (a.id.split(".").length - b.id.split(".").length) || a.id.localeCompare(b.id);
     });
     // Verfify all sub-states have a superior device, channel or folder
-    // Foreach sub-state (. in id)
-    iobObjects.filter(item => item.object.type.split(".").length > 0).filter(item => item.object.type === "state").forEach(iobObj => {
+    // Action1:		Filter sub-id's (split . and array length > 3)
+    // Example:		Match adapter.0.folder.statename (Folder must be defined as superior object)
+    // 				But not adapter.0.statename (There could not exist a superior object)
+    // Action2:		Filter states, for states in a sub-level a superior object should be defined
+    iobObjects.filter(item => item.id.split(".").length > 3).filter(item => item.object.type === "state").forEach(iobObj => {
+        // Split id in an array by .
         const iobIDPath = iobObj.id.split(".");
-        if (iobIDPath.length > 0) {
-            // Remove last element (=name of state)
-            iobIDPath.pop();
-            let iobIDBasePath = "";
-            iobIDPath.forEach(iobIDName => {
-                if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length > 1) {
-                    throw `Duplicated object ${iobIDBasePath}${iobIDName} defined`;
+        // Remove last element (=name of state)
+        // iobIDPath from adapter.0.folder.statename is then ['adapter', '0', 'folder']
+        iobIDPath.pop();
+        // Create empty BasePath (explained below)
+        let iobIDBasePath = "";
+        // Create a Counter for Path-Depth (explained below)
+        let CountPathDepth = 0;
+        // Iterate each part of id, so adapter, 0, folder
+        // adapter and 0 could not be defined as superior object, this structure is created automatically.
+        // Therefore the Counter CountPathDepth is used. We're starting always with adapter, followed by 0.
+        // So checks for a superior object must start after adapter.0 (CountPathDepth >= 2)
+        // Because we're iterating through ['adapter', '0', 'folder'] we need the ability to recreate the complete id
+        // Therefore the variable iobIDBasePath is used. After checking the current level, we're setting the basepath.
+        // So after checking adapter the basepath is "adapter.", after 0 the basepath becomes "adapter.0."
+        iobIDPath.forEach(iobIDName => {
+            // First lets check that there is no duplicted object with that name
+            // For example: a state with id adapter.0.folder.name and another state or folder with the same id
+            // Therefore we're checking if the complete object array has more than one element with that id
+            if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length > 1) {
+                throw `Duplicated object ${iobIDBasePath}${iobIDName} defined`;
+            }
+            else {
+                // Checking if a superior object is defined
+                // When iterating ['adapter', '0', 'folder'], we must check only at Depth >= 2 and not adapter or 0
+                // Then we check that adapter.0.folder is defined as id in the complete object array
+                if (CountPathDepth >= 2 && !iobObjects.some(item => item.id === `${iobIDBasePath}${iobIDName}`)) {
+                    throw `No superior object declared for ${iobIDPath.join(".")}`;
                 }
-                else {
-                    if (iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).length === 0) {
-                        throw `No superior object declared for ${iobIDPath.join(".")}`;
+                // Ok, superior object is defined. But the superior object muste be device, channel or folder, not a state for example
+                // Due to filter on the superior object we don't get into foreach for adapter or 0
+                // For adapter.0.folder we get the above checked for exist superior object
+                // Now finally verify that this superior object has the correct type
+                iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).forEach(iobObj => {
+                    if ((iobObj.object.type === "device" || iobObj.object.type === "channel" || iobObj.object.type === "folder") === false) {
+                        throw `No correct superior object declared for ${iobIDPath.join(".")}`;
                     }
-                    iobObjects.filter(item => item.id === `${iobIDBasePath}${iobIDName}`).forEach(iobObj => {
-                        if ((iobObj.object.type === "device" || iobObj.object.type === "channel" || iobObj.object.type === "folder") === false) {
-                            throw `No correct superior object declared for ${iobIDPath.join(".")}`;
-                        }
-                    });
-                }
-                iobIDBasePath = `${iobIDBasePath}${iobIDName}.`;
-            });
-        }
+                });
+            }
+            // Extend Base Path, e.g. from "" to "adapter.", then from "adapter." to "adapter.0., then...."
+            iobIDBasePath = `${iobIDBasePath}${iobIDName}.`;
+            // PathDepth Counter + 1 (adapter = 0, 0 = 1, folder = 2, ...)
+            CountPathDepth++;
+        });
     });
 }
 exports.validateObjectTree = validateObjectTree;
@@ -122,6 +213,10 @@ function syncObjects(adapterInstance, iobObjects, options = {}) {
     return __awaiter(this, void 0, void 0, function* () {
         // Parse options and choose defaults
         const { overwriteExisting = false, removeUnused = false, except } = options;
+        // Validate objects
+        iobObjects.forEach(iobObject => {
+            validateObject(iobObject);
+        });
         // Ensure that the entire object tree is complete and no intermediate objects are missing
         validateObjectTree(iobObjects);
         // Find out which objects are new, which are going to be overwritten and which might need to be deleted
@@ -215,6 +310,10 @@ function createTemplateObjectDefinition(objectType, role) {
     // If role is defined set role
     if (role && (objectType === "state" || objectType === "channel")) {
         objectCommon = Object.assign(Object.assign(Object.assign({}, objectCommon), { role }), Roles.roles_definition[role]);
+    }
+    // Remove unit:forbidden
+    if (objectCommon.unit === "forbidden") {
+        delete objectCommon.unit;
     }
     return {
         type: objectType,

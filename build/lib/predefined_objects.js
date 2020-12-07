@@ -35,7 +35,7 @@ exports.templates = validateType({
     json: {
         type: "state",
         common: {
-            role: "state",
+            role: "json",
             name: "JSON",
             type: "string",
             read: true,
