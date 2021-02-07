@@ -66,10 +66,6 @@ export declare const objectCommonSchemas: ValidatedCommonSchema<{
         attrMandatory: string[];
         attrOptional: never[];
     };
-    info: {
-        desc: string;
-        attrMandatory: string[];
-    };
     chart: {
         desc: string;
     };
@@ -77,7 +73,7 @@ export declare const objectCommonSchemas: ValidatedCommonSchema<{
 export declare const commonAttributes: {
     type: {
         desc: string;
-        type: ("number" | "string" | "boolean" | "array" | "object" | "mixed" | "file")[];
+        type: ("string" | "number" | "boolean" | "array" | "object" | "mixed" | "file")[];
         attrType: "string";
     };
     name: {

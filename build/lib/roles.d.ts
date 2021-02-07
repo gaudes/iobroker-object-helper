@@ -36,7 +36,7 @@ export declare const roles_definition: {
     };
     date: {
         desc: string;
-        type: ("number" | "string")[];
+        type: ("string" | "number")[];
         read: true;
         write: true;
     };
@@ -707,7 +707,7 @@ export declare const roles_definition: {
     };
     "level.mode.fan": {
         desc: string;
-        type: ("number" | "string")[];
+        type: ("string" | "number")[];
         read: true;
         write: true;
         states: {
@@ -751,7 +751,7 @@ export declare const roles_definition: {
     };
     "level.mode.cleanup": {
         desc: string;
-        type: ("number" | "string")[];
+        type: ("string" | "number")[];
         read: true;
         write: true;
         states: {
@@ -765,7 +765,7 @@ export declare const roles_definition: {
     };
     "level.mode.work": {
         desc: string;
-        type: ("number" | "string")[];
+        type: ("string" | "number")[];
         read: true;
         write: true;
         states: {
@@ -1651,13 +1651,13 @@ export declare const roles_definition: {
     };
     "date.start": {
         desc: string;
-        type: ("number" | "string")[];
+        type: ("string" | "number")[];
         read: true;
         write: true;
     };
     "date.end": {
         desc: string;
-        type: ("number" | "string")[];
+        type: ("string" | "number")[];
         read: true;
         write: true;
     };

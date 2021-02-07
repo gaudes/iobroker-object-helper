@@ -204,12 +204,12 @@ exports.objectCommonSchemas = validateCommonSchema({
     },
     // Info is in Type Definitions, but missing in documentation
     // See issue: https://github.com/ioBroker/adapter-core/issues/283
-    "info": {
+    /*"info": {
         "desc": "Information object",
         "attrMandatory": [
             "name"
         ]
-    },
+    },*/
     "chart": {
         "desc": "Represents a chart (e.g. for flot)"
     }
