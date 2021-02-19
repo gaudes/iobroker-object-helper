@@ -1,30 +1,38 @@
 /* eslint-disable @typescript-eslint/indent */
 import * as iobObjectHelper from "../main";
 
-const globalchildren: Map<string, any> = new Map();
-
+//#endregion Base class
 class iobObjectTreeBase{
 	public children: Map<string, iobObjectTreeBase>;
 	// Eventuell würde es Sinn machen, children als ReadonlyMap zu exportieren, damit sie nur von intern bearbeitet wird
 	adapterInstance: ioBroker.Adapter;
+	isSync: boolean;
 
 	constructor(adapterInstance: ioBroker.Adapter) {
 		this.adapterInstance = adapterInstance;
         this.children = new Map();
+		this.isSync = false;
     }
 
+	//#region State functions
     protected addState(
 		options: Omit<
 		iobObjectHelper.BuildObjectOptions & { objectType: "state" },
 		"objectType"
 		>,
 	): iobObjectState {
+		// Build object
 		const obj = iobObjectHelper.buildObject(this.adapterInstance, {
 			...options,
 			objectType: "state",
 		});
+		// Verify object tree with new object
+		const flatten = this.flatten();
+		flatten.push(obj);
+		iobObjectHelper.validateObjectTree(flatten);
+		// On success return object
 		const ret = new iobObjectState(this.adapterInstance, obj);
-        globalchildren.set(obj.id, ret);
+		this.isSync = false;
 		return ret;
 	}
 
@@ -34,52 +42,91 @@ class iobObjectTreeBase{
 		"objectType"
 		>,
 	): iobObjectState {
+		// Build object
 		const obj = iobObjectHelper.buildObject(this.adapterInstance, {
 			...options,
 			objectType: "template",
 		}) as iobObjectHelper.ObjectWithValue<"state">;
+		// Verify object tree with new object
+		const flatten = this.flatten();
+		flatten.push(obj);
+		iobObjectHelper.validateObjectTree(flatten);
+		// On success return object
 		const ret = new iobObjectState(this.adapterInstance, obj);
-        globalchildren.set(obj.id, obj);
+		this.isSync = false;
 		return ret;
 	}
+	//#endregion
 
+	//#region Channel functions
     protected addChannel(
 		options: Omit<
 		iobObjectHelper.BuildObjectOptions & { objectType: "template", template: "channel" },
 		"objectType"|"template"
 		>,
 	): iobObjectChannel {
+		// Build object
 		const obj = iobObjectHelper.buildObject(this.adapterInstance, {
 			...options,
 			objectType: "template",
 			template: "channel"
 		}) as iobObjectHelper.ObjectWithValue<"channel">;
+		// Verify object tree with new object
+		const flatten = this.flatten();
+		flatten.push(obj);
+		iobObjectHelper.validateObjectTree(flatten);
+		// On success return object
 		const ret = new iobObjectChannel(this.adapterInstance, obj);
-        globalchildren.set(obj.id, ret);
+		this.isSync = false;
 		return ret;
     }
+	//#endregion
 
+	//#region Folder functions
     protected addFolder(
 		options: Omit<
 		iobObjectHelper.BuildObjectOptions & { objectType: "template", template: "folder" },
 		"objectType"|"template"
 		>,
 	): iobObjectFolder {
+		// Build object
 		const obj = iobObjectHelper.buildObject(this.adapterInstance, {
 			...options,
 			objectType: "template",
 			template: "folder"
 		}) as iobObjectHelper.ObjectWithValue<"folder">;
+		// Verify object tree with new object
+		const flatten = this.flatten();
+		flatten.push(obj);
+		iobObjectHelper.validateObjectTree(flatten);
+		// On success return object
 		const ret = new iobObjectFolder(this.adapterInstance, obj);
-        globalchildren.set(obj.id, ret);
+		this.isSync = false;
 		return ret;
 	}
+	//#endregion
 
-    logChildren():void{
-        console.log(globalchildren);
+	//#region Functions
+    flatten(): iobObjectHelper.ObjectWithValue[]{
+        const flatten: iobObjectHelper.ObjectWithValue[] = [];
+		for (const [, child] of (this.children as Map<string, iobObjectChannel | iobObjectState | iobObjectFolder >).entries()){
+			flatten.push(child.my);
+			flatten.push(...child.flatten())
+		}
+		return flatten;
     }
-}
 
+	protected async syncObjects(options: iobObjectHelper.SyncObjectsOptions): Promise<void>{
+		if (this.isSync === false){
+			await iobObjectHelper.syncObjects(this.adapterInstance, this.flatten(), options);
+			this.isSync = true;
+		}
+	}
+	//#endregion
+}
+//#endregion
+
+//#region Exported Level0 class
 export class iobObjectTree extends iobObjectTreeBase{
 	public children: Map<string, iobObjectTreeBase>;
 	// Eventuell würde es Sinn machen, children als ReadonlyMap zu exportieren, damit sie nur von intern bearbeitet wird
@@ -137,12 +184,17 @@ export class iobObjectTree extends iobObjectTreeBase{
         this.children.set(ret.my.id, ret);
 		return ret;
 	}
+	async syncObjects(options: iobObjectHelper.SyncObjectsOptions): Promise<void>{
+		await super.syncObjects(options);
+	}
 }
+//#endregion
 
+//#region State class
 export class iobObjectState extends iobObjectTreeBase {
 	// iobObjectState kann keine Kind-Objekte haben -> never
 	// declare überschreibt hier nur den Typ und definiert keine neue Eigenschaft
-	//public declare children: Map<string, never>;
+	public declare children: Map<string, never>;
 	public my: iobObjectHelper.ObjectWithValue<"state">;
 
 	constructor(
@@ -154,11 +206,13 @@ export class iobObjectState extends iobObjectTreeBase {
 		this.my = obj;
 	}
 }
+//#endregion
 
+//#region Channel class
 export class iobObjectChannel extends iobObjectTreeBase {
 	// iobObjectChannel kann Channel und States als Kinder haben
 	// declare überschreibt hier nur den Typ und definiert keine neue Eigenschaft
-	//public declare children: Map<string, iobObjectChannel | iobObjectState>;
+	public declare children: Map<string, iobObjectChannel | iobObjectState | iobObjectFolder>;
 	public my: iobObjectHelper.ObjectWithValue<"channel">;
 
 	constructor(
@@ -204,11 +258,13 @@ export class iobObjectChannel extends iobObjectTreeBase {
 		return ret;
 	}
 }
+//#endregion
 
+//#region  Folder class
 export class iobObjectFolder extends iobObjectTreeBase {
 	// iobObjectFolder kann Folder und States als Kinder haben
 	// declare überschreibt hier nur den Typ und definiert keine neue Eigenschaft
-	//public declare children: Map<string, iobObjectChannel | iobObjectState>;
+	public declare children: Map<string, iobObjectFolder | iobObjectState>;
 	public my: iobObjectHelper.ObjectWithValue<"folder">;
 
 	constructor(
@@ -254,3 +310,4 @@ export class iobObjectFolder extends iobObjectTreeBase {
 		return ret;
 	}
 }
+//#endregion
