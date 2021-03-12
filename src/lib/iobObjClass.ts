@@ -6,12 +6,12 @@ class iobObjectTreeBase{
 	public children: Map<string, iobObjectTreeBase>;
 	// Eventuell würde es Sinn machen, children als ReadonlyMap zu exportieren, damit sie nur von intern bearbeitet wird
 	adapterInstance: ioBroker.Adapter;
-	isSync: boolean;
+	isSyncComplete: boolean;
 
 	constructor(adapterInstance: ioBroker.Adapter) {
 		this.adapterInstance = adapterInstance;
         this.children = new Map();
-		this.isSync = false;
+		this.isSyncComplete = false;
     }
 
 	//#region State functions
@@ -32,7 +32,7 @@ class iobObjectTreeBase{
 		iobObjectHelper.validateObjectTree(flatten);
 		// On success return object
 		const ret = new iobObjectState(this.adapterInstance, obj);
-		this.isSync = false;
+		this.isSyncComplete = false;
 		return ret;
 	}
 
@@ -50,10 +50,13 @@ class iobObjectTreeBase{
 		// Verify object tree with new object
 		const flatten = this.flatten();
 		flatten.push(obj);
+		console.log("Start flatten");
+		console.log(flatten);
+		console.log("Ende flatten");
 		iobObjectHelper.validateObjectTree(flatten);
 		// On success return object
 		const ret = new iobObjectState(this.adapterInstance, obj);
-		this.isSync = false;
+		this.isSyncComplete = false;
 		return ret;
 	}
 	//#endregion
@@ -77,7 +80,7 @@ class iobObjectTreeBase{
 		iobObjectHelper.validateObjectTree(flatten);
 		// On success return object
 		const ret = new iobObjectChannel(this.adapterInstance, obj);
-		this.isSync = false;
+		this.isSyncComplete = false;
 		return ret;
     }
 	//#endregion
@@ -101,12 +104,22 @@ class iobObjectTreeBase{
 		iobObjectHelper.validateObjectTree(flatten);
 		// On success return object
 		const ret = new iobObjectFolder(this.adapterInstance, obj);
-		this.isSync = false;
+		this.isSyncComplete = false;
 		return ret;
 	}
 	//#endregion
 
 	//#region Functions
+	protected ensureNamespace(objectId: string, baseObjectId = ""): string {
+		if (baseObjectId !== ""){
+			if (objectId.startsWith(`${baseObjectId}.`)) return objectId;
+			return `${baseObjectId}.${objectId}`;
+		}else{
+			if (objectId.startsWith(`${this.adapterInstance.namespace}.`)) return objectId;
+			return `${this.adapterInstance.namespace}.${objectId}`;
+		}
+	}
+
     flatten(): iobObjectHelper.ObjectWithValue[]{
         const flatten: iobObjectHelper.ObjectWithValue[] = [];
 		for (const [, child] of (this.children as Map<string, iobObjectChannel | iobObjectState | iobObjectFolder >).entries()){
@@ -117,9 +130,12 @@ class iobObjectTreeBase{
     }
 
 	protected async syncObjects(options: iobObjectHelper.SyncObjectsOptions): Promise<void>{
-		if (this.isSync === false){
+		if (this.isSyncComplete === false){
 			await iobObjectHelper.syncObjects(this.adapterInstance, this.flatten(), options);
-			this.isSync = true;
+			this.isSyncComplete = true;
+			for (const [, child] of (this.children as Map<string, iobObjectChannel | iobObjectState | iobObjectFolder >).entries()){
+				child.isSync = true;
+			}
 		}
 	}
 	//#endregion
@@ -146,6 +162,7 @@ export class iobObjectTree extends iobObjectTreeBase{
 		"objectType"
 		>,
 	): iobObjectState {
+		options.id = super.ensureNamespace(options.id);
 		const ret = super.addState(options);
         this.children.set(ret.my.id, ret);
 		return ret;
@@ -158,6 +175,7 @@ export class iobObjectTree extends iobObjectTreeBase{
 		"objectType"
 		>,
 	): iobObjectState {
+		options.id = super.ensureNamespace(options.id);
 		const ret = super.addStateFromTemplate(options);
         this.children.set(ret.my.id, ret);
 		return ret;
@@ -169,6 +187,7 @@ export class iobObjectTree extends iobObjectTreeBase{
 		"objectType"|"template"
 		>,
 	): iobObjectChannel {
+		options.id = super.ensureNamespace(options.id);
 		const ret = super.addChannel(options);
         this.children.set(ret.my.id, ret);
 		return ret;
@@ -180,6 +199,7 @@ export class iobObjectTree extends iobObjectTreeBase{
 		"objectType"|"template"
 		>,
 	): iobObjectFolder {
+		options.id = super.ensureNamespace(options.id);
 		const ret = super.addFolder(options);
         this.children.set(ret.my.id, ret);
 		return ret;
@@ -196,6 +216,7 @@ export class iobObjectState extends iobObjectTreeBase {
 	// declare überschreibt hier nur den Typ und definiert keine neue Eigenschaft
 	public declare children: Map<string, never>;
 	public my: iobObjectHelper.ObjectWithValue<"state">;
+	public isSync: boolean;
 
 	constructor(
 		adapterInstance: ioBroker.Adapter,
@@ -204,6 +225,7 @@ export class iobObjectState extends iobObjectTreeBase {
 		super(adapterInstance);
 		//this.children.set("id", 1); // jetzt wird gemeckert, falls du doch children hinzufügen willst
 		this.my = obj;
+		this.isSync = false;
 	}
 }
 //#endregion
@@ -214,6 +236,7 @@ export class iobObjectChannel extends iobObjectTreeBase {
 	// declare überschreibt hier nur den Typ und definiert keine neue Eigenschaft
 	public declare children: Map<string, iobObjectChannel | iobObjectState | iobObjectFolder>;
 	public my: iobObjectHelper.ObjectWithValue<"channel">;
+	public isSync: boolean;
 
 	constructor(
 		adapterInstance: ioBroker.Adapter,
@@ -222,6 +245,7 @@ export class iobObjectChannel extends iobObjectTreeBase {
 		super(adapterInstance);
 		//this.children.set("id", (undefined as any) as iobObjectChannel); // Kleiner Hack, um zu demonstrieren dass man Channel hinzufügen kann
 		this.my = obj;
+		this.isSync = false;
 		//this.children = new Map();
     }
 
@@ -231,6 +255,7 @@ export class iobObjectChannel extends iobObjectTreeBase {
 		"objectType"
 		>,
 	): iobObjectState {
+		options.id = super.ensureNamespace(options.id, this.my.id);
 		const ret = super.addState(options);
         this.children.set(ret.my.id, ret);
 		return ret;
@@ -242,6 +267,7 @@ export class iobObjectChannel extends iobObjectTreeBase {
 		"objectType"
 		>,
 	): iobObjectState {
+		options.id = super.ensureNamespace(options.id, this.my.id);
 		const ret = super.addStateFromTemplate(options);
         this.children.set(ret.my.id, ret);
 		return ret;
@@ -253,6 +279,7 @@ export class iobObjectChannel extends iobObjectTreeBase {
 		"objectType"|"template"
 		>,
 	): iobObjectFolder {
+		options.id = super.ensureNamespace(options.id, this.my.id);
 		const ret = super.addFolder(options);
         this.children.set(ret.my.id, ret);
 		return ret;
@@ -266,6 +293,7 @@ export class iobObjectFolder extends iobObjectTreeBase {
 	// declare überschreibt hier nur den Typ und definiert keine neue Eigenschaft
 	public declare children: Map<string, iobObjectFolder | iobObjectState>;
 	public my: iobObjectHelper.ObjectWithValue<"folder">;
+	public isSync: boolean;
 
 	constructor(
 		adapterInstance: ioBroker.Adapter,
@@ -274,6 +302,7 @@ export class iobObjectFolder extends iobObjectTreeBase {
 		super(adapterInstance);
 		//this.children.set("id", (undefined as any) as iobObjectChannel); // Kleiner Hack, um zu demonstrieren dass man Channel hinzufügen kann
 		this.my = obj;
+		this.isSync = false;
 		//this.children = new Map();
     }
 
@@ -283,6 +312,7 @@ export class iobObjectFolder extends iobObjectTreeBase {
 		"objectType"
 		>,
 	): iobObjectState {
+		options.id = super.ensureNamespace(options.id, this.my.id);
 		const ret = super.addState(options);
         this.children.set(ret.my.id, ret);
 		return ret;
@@ -294,6 +324,7 @@ export class iobObjectFolder extends iobObjectTreeBase {
 		"objectType"
 		>,
 	): iobObjectState {
+		options.id = super.ensureNamespace(options.id, this.my.id);
 		const ret = super.addStateFromTemplate(options);
         this.children.set(ret.my.id, ret);
 		return ret;
@@ -305,6 +336,7 @@ export class iobObjectFolder extends iobObjectTreeBase {
 		"objectType"|"template"
 		>,
 	): iobObjectFolder {
+		options.id = super.ensureNamespace(options.id, this.my.id);
 		const ret = super.addFolder(options);
         this.children.set(ret.my.id, ret);
 		return ret;
