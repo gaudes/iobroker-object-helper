@@ -26,12 +26,8 @@ class iobObjectTreeBase{
 			...options,
 			objectType: "state",
 		});
-		// Verify object tree with new object
-		const flatten = this.flatten();
-		flatten.push(obj);
-		iobObjectHelper.validateObjectTree(flatten);
-		// On success return object
 		const ret = new iobObjectState(this.adapterInstance, obj);
+		this.children.set(ret.my.id, ret);
 		this.isSyncComplete = false;
 		return ret;
 	}
@@ -47,15 +43,8 @@ class iobObjectTreeBase{
 			...options,
 			objectType: "template",
 		}) as iobObjectHelper.ObjectWithValue<"state">;
-		// Verify object tree with new object
-		const flatten = this.flatten();
-		flatten.push(obj);
-		console.log("Start flatten");
-		console.log(flatten);
-		console.log("Ende flatten");
-		iobObjectHelper.validateObjectTree(flatten);
-		// On success return object
 		const ret = new iobObjectState(this.adapterInstance, obj);
+		this.children.set(ret.my.id, ret);
 		this.isSyncComplete = false;
 		return ret;
 	}
@@ -74,12 +63,8 @@ class iobObjectTreeBase{
 			objectType: "template",
 			template: "channel"
 		}) as iobObjectHelper.ObjectWithValue<"channel">;
-		// Verify object tree with new object
-		const flatten = this.flatten();
-		flatten.push(obj);
-		iobObjectHelper.validateObjectTree(flatten);
-		// On success return object
 		const ret = new iobObjectChannel(this.adapterInstance, obj);
+		this.children.set(ret.my.id, ret);
 		this.isSyncComplete = false;
 		return ret;
     }
@@ -98,12 +83,8 @@ class iobObjectTreeBase{
 			objectType: "template",
 			template: "folder"
 		}) as iobObjectHelper.ObjectWithValue<"folder">;
-		// Verify object tree with new object
-		const flatten = this.flatten();
-		flatten.push(obj);
-		iobObjectHelper.validateObjectTree(flatten);
-		// On success return object
 		const ret = new iobObjectFolder(this.adapterInstance, obj);
+		this.children.set(ret.my.id, ret);
 		this.isSyncComplete = false;
 		return ret;
 	}
@@ -112,11 +93,13 @@ class iobObjectTreeBase{
 	//#region Functions
 	protected ensureNamespace(objectId: string, baseObjectId = ""): string {
 		if (baseObjectId !== ""){
-			if (objectId.startsWith(`${baseObjectId}.`)) return objectId;
-			return `${baseObjectId}.${objectId}`;
+			if (objectId.match(new RegExp("^" + baseObjectId.replace(".", "\\.") + "\\.[^.]*$"))) return objectId;
+			if (objectId.match(/^[^.]*$/)) return `${baseObjectId}.${objectId}`;
+			throw(`Invalid object id: ${objectId}`);
 		}else{
-			if (objectId.startsWith(`${this.adapterInstance.namespace}.`)) return objectId;
-			return `${this.adapterInstance.namespace}.${objectId}`;
+			if (objectId.match(new RegExp("^" + this.adapterInstance.namespace.replace(".", "\\.") + "\\.[^.]*$"))) return objectId;
+			if (objectId.match(/^[^.]*$/)) return `${this.adapterInstance.namespace}.${objectId}`;
+			throw(`Invalid object id: ${objectId}`);
 		}
 	}
 
@@ -129,13 +112,38 @@ class iobObjectTreeBase{
 		return flatten;
     }
 
-	protected async syncObjects(options: iobObjectHelper.SyncObjectsOptions): Promise<void>{
+	protected validate(): boolean{
+		iobObjectHelper.validateObjectTree(this.flatten());
+		return true;
+	}
+
+	protected async syncObjectsAsync(options: iobObjectHelper.SyncObjectsOptions): Promise<void>{
 		if (this.isSyncComplete === false){
 			await iobObjectHelper.syncObjects(this.adapterInstance, this.flatten(), options);
 			this.isSyncComplete = true;
 			for (const [, child] of (this.children as Map<string, iobObjectChannel | iobObjectState | iobObjectFolder >).entries()){
 				child.isSync = true;
 			}
+		}
+	}
+
+	protected getTypefromValue(value:any): ioBroker.CommonType|undefined {
+		switch (typeof(value)){
+			case "object":
+				// Handle typeof [] === "object"
+				if (Array.isArray(value)){
+					return "array";
+				// Handle typeof {} === "object"
+				}else if(Object.prototype.toString.call(value) === "[object Object]"){
+					return "object";
+				// typeof null === "object"
+				}
+			case "number":
+				return "number";
+			case "string":
+				return "string";
+			case "boolean":
+				return "boolean";
 		}
 	}
 	//#endregion
@@ -164,7 +172,6 @@ export class iobObjectTree extends iobObjectTreeBase{
 	): iobObjectState {
 		options.id = super.ensureNamespace(options.id);
 		const ret = super.addState(options);
-        this.children.set(ret.my.id, ret);
 		return ret;
 	}
 
@@ -177,7 +184,6 @@ export class iobObjectTree extends iobObjectTreeBase{
 	): iobObjectState {
 		options.id = super.ensureNamespace(options.id);
 		const ret = super.addStateFromTemplate(options);
-        this.children.set(ret.my.id, ret);
 		return ret;
 	}
 
@@ -189,7 +195,6 @@ export class iobObjectTree extends iobObjectTreeBase{
 	): iobObjectChannel {
 		options.id = super.ensureNamespace(options.id);
 		const ret = super.addChannel(options);
-        this.children.set(ret.my.id, ret);
 		return ret;
     }
 
@@ -201,11 +206,15 @@ export class iobObjectTree extends iobObjectTreeBase{
 	): iobObjectFolder {
 		options.id = super.ensureNamespace(options.id);
 		const ret = super.addFolder(options);
-        this.children.set(ret.my.id, ret);
 		return ret;
 	}
-	async syncObjects(options: iobObjectHelper.SyncObjectsOptions): Promise<void>{
-		await super.syncObjects(options);
+
+	async syncObjectsAsync(options: iobObjectHelper.SyncObjectsOptions): Promise<void>{
+		await super.syncObjectsAsync(options);
+	}
+
+	validate(): boolean{
+		return super.validate();
 	}
 }
 //#endregion
@@ -226,6 +235,32 @@ export class iobObjectState extends iobObjectTreeBase {
 		//this.children.set("id", 1); // jetzt wird gemeckert, falls du doch children hinzufügen willst
 		this.my = obj;
 		this.isSync = false;
+	}
+
+	setValue(value: string | number | boolean | ioBroker.State | ioBroker.SettableState | null, ack = false): boolean{
+		if (this.getTypefromValue(value) !== this.my.object.common.type){
+			throw `Invalid value type, type must be ${this.my.object.common.type}`
+		}
+		if (this.isSync === false){
+			this.my.value = value;
+			return true;
+		}else{
+			// SET DIRECT CURRENTLY MISSING
+			return true;
+		}
+	}
+
+	async setValueAsync(value: string | number | boolean | ioBroker.State | ioBroker.SettableState | null, ack = false): Promise<boolean>{
+		if (this.getTypefromValue(value) !== this.my.object.common.type){
+			throw `Invalid value type, type must be ${this.my.object.common.type}`
+		}
+		if (this.isSync === false){
+			this.my.value = value;
+			return true;
+		}else{
+			// SET DIRECT CURRENTLY MISSING
+			return true;
+		}
 	}
 }
 //#endregion
@@ -257,7 +292,6 @@ export class iobObjectChannel extends iobObjectTreeBase {
 	): iobObjectState {
 		options.id = super.ensureNamespace(options.id, this.my.id);
 		const ret = super.addState(options);
-        this.children.set(ret.my.id, ret);
 		return ret;
 	}
 
@@ -269,7 +303,6 @@ export class iobObjectChannel extends iobObjectTreeBase {
 	): iobObjectState {
 		options.id = super.ensureNamespace(options.id, this.my.id);
 		const ret = super.addStateFromTemplate(options);
-        this.children.set(ret.my.id, ret);
 		return ret;
     }
 
@@ -281,7 +314,6 @@ export class iobObjectChannel extends iobObjectTreeBase {
 	): iobObjectFolder {
 		options.id = super.ensureNamespace(options.id, this.my.id);
 		const ret = super.addFolder(options);
-        this.children.set(ret.my.id, ret);
 		return ret;
 	}
 }
@@ -314,7 +346,6 @@ export class iobObjectFolder extends iobObjectTreeBase {
 	): iobObjectState {
 		options.id = super.ensureNamespace(options.id, this.my.id);
 		const ret = super.addState(options);
-        this.children.set(ret.my.id, ret);
 		return ret;
 	}
 
@@ -326,7 +357,6 @@ export class iobObjectFolder extends iobObjectTreeBase {
 	): iobObjectState {
 		options.id = super.ensureNamespace(options.id, this.my.id);
 		const ret = super.addStateFromTemplate(options);
-        this.children.set(ret.my.id, ret);
 		return ret;
     }
 
@@ -338,7 +368,6 @@ export class iobObjectFolder extends iobObjectTreeBase {
 	): iobObjectFolder {
 		options.id = super.ensureNamespace(options.id, this.my.id);
 		const ret = super.addFolder(options);
-        this.children.set(ret.my.id, ret);
 		return ret;
 	}
 }

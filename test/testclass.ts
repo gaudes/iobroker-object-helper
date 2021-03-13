@@ -22,17 +22,14 @@ describe("Test ClassUsage", () =>{
         const iobObjTree = new iobObjectTree(Adapter);
         const TestState = iobObjTree.addStateFromTemplate({id: "test.0.test", name: "test", value: "Test", template: "html"});
         const TestChannel = iobObjTree.addChannel({id: "channel", name: "channel"});
-        console.log(iobObjTree.flatten());
-        console.log("HIERNOCHOK");
         const TestState2 = TestChannel.addStateFromTemplate({id: "substate", name: "test", value: "Test", template: "html"});
-        console.log("HIERNOCHOK2");
-        expect(iobObjTree.addStateFromTemplate.bind(iobObjTree, {id: "test.0.test.test", name: "test", value: "Test", template: "html"})).to.throw("No correct superior object declared for test.0.test");
-        // Flatten output
-        console.log("Start flatten");
-        console.log(iobObjTree.flatten());
-        console.log("End flatten");
         // Check state
         expect(TestState).to.have.property("my").to.have.property("id").that.be.eql("test.0.test");
+        TestState.setValue("TEST");
+        expect(TestState.setValue.bind(TestState, 123)).to.throw("Invalid value type, type must be string");
+        expect(iobObjTree.addStateFromTemplate.bind(iobObjTree, {id: "test.0.test.test", name: "test", value: "Test", template: "html"})).to.throw("Invalid object id: test.0.test.test");
+        console.log(iobObjTree.flatten());
         console.log(iobObjTree);
+        iobObjTree.validate();
     });
 });

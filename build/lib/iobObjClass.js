@@ -18,44 +18,127 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.iobObjectFolder = exports.iobObjectChannel = exports.iobObjectState = exports.iobObjectTree = void 0;
 /* eslint-disable @typescript-eslint/indent */
 const iobObjectHelper = __importStar(require("../main"));
-const globalchildren = new Map();
+//#endregion Base class
 class iobObjectTreeBase {
     constructor(adapterInstance) {
         this.adapterInstance = adapterInstance;
         this.children = new Map();
+        this.isSyncComplete = false;
     }
+    //#region State functions
     addState(options) {
+        // Build object
         const obj = iobObjectHelper.buildObject(this.adapterInstance, Object.assign(Object.assign({}, options), { objectType: "state" }));
         const ret = new iobObjectState(this.adapterInstance, obj);
-        globalchildren.set(obj.id, ret);
+        this.children.set(ret.my.id, ret);
+        this.isSyncComplete = false;
         return ret;
     }
     addStateFromTemplate(options) {
+        // Build object
         const obj = iobObjectHelper.buildObject(this.adapterInstance, Object.assign(Object.assign({}, options), { objectType: "template" }));
         const ret = new iobObjectState(this.adapterInstance, obj);
-        globalchildren.set(obj.id, obj);
+        this.children.set(ret.my.id, ret);
+        this.isSyncComplete = false;
         return ret;
     }
+    //#endregion
+    //#region Channel functions
     addChannel(options) {
+        // Build object
         const obj = iobObjectHelper.buildObject(this.adapterInstance, Object.assign(Object.assign({}, options), { objectType: "template", template: "channel" }));
         const ret = new iobObjectChannel(this.adapterInstance, obj);
-        globalchildren.set(obj.id, ret);
+        this.children.set(ret.my.id, ret);
+        this.isSyncComplete = false;
         return ret;
     }
+    //#endregion
+    //#region Folder functions
     addFolder(options) {
+        // Build object
         const obj = iobObjectHelper.buildObject(this.adapterInstance, Object.assign(Object.assign({}, options), { objectType: "template", template: "folder" }));
         const ret = new iobObjectFolder(this.adapterInstance, obj);
-        globalchildren.set(obj.id, ret);
+        this.children.set(ret.my.id, ret);
+        this.isSyncComplete = false;
         return ret;
     }
-    logChildren() {
-        console.log(globalchildren);
+    //#endregion
+    //#region Functions
+    ensureNamespace(objectId, baseObjectId = "") {
+        if (baseObjectId !== "") {
+            if (objectId.match(new RegExp("^" + baseObjectId.replace(".", "\\.") + "\\.[^.]*$")))
+                return objectId;
+            if (objectId.match(/^[^.]*$/))
+                return `${baseObjectId}.${objectId}`;
+            throw (`Invalid object id: ${objectId}`);
+        }
+        else {
+            if (objectId.match(new RegExp("^" + this.adapterInstance.namespace.replace(".", "\\.") + "\\.[^.]*$")))
+                return objectId;
+            if (objectId.match(/^[^.]*$/))
+                return `${this.adapterInstance.namespace}.${objectId}`;
+            throw (`Invalid object id: ${objectId}`);
+        }
+    }
+    flatten() {
+        const flatten = [];
+        for (const [, child] of this.children.entries()) {
+            flatten.push(child.my);
+            flatten.push(...child.flatten());
+        }
+        return flatten;
+    }
+    validate() {
+        iobObjectHelper.validateObjectTree(this.flatten());
+        return true;
+    }
+    syncObjectsAsync(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.isSyncComplete === false) {
+                yield iobObjectHelper.syncObjects(this.adapterInstance, this.flatten(), options);
+                this.isSyncComplete = true;
+                for (const [, child] of this.children.entries()) {
+                    child.isSync = true;
+                }
+            }
+        });
+    }
+    getTypefromValue(value) {
+        switch (typeof (value)) {
+            case "object":
+                // Handle typeof [] === "object"
+                if (Array.isArray(value)) {
+                    return "array";
+                    // Handle typeof {} === "object"
+                }
+                else if (Object.prototype.toString.call(value) === "[object Object]") {
+                    return "object";
+                    // typeof null === "object"
+                }
+            case "number":
+                return "number";
+            case "string":
+                return "string";
+            case "boolean":
+                return "boolean";
+        }
     }
 }
+//#endregion
+//#region Exported Level0 class
 class iobObjectTree extends iobObjectTreeBase {
     constructor(adapterInstance) {
         super(adapterInstance);
@@ -63,82 +146,131 @@ class iobObjectTree extends iobObjectTreeBase {
         this.children = new Map();
     }
     addState(options) {
+        options.id = super.ensureNamespace(options.id);
         const ret = super.addState(options);
-        this.children.set(ret.my.id, ret);
         return ret;
     }
     // Einschränkung von Template noch notwendig, nicht Device, Channel, Folder
     addStateFromTemplate(options) {
+        options.id = super.ensureNamespace(options.id);
         const ret = super.addStateFromTemplate(options);
-        this.children.set(ret.my.id, ret);
         return ret;
     }
     addChannel(options) {
+        options.id = super.ensureNamespace(options.id);
         const ret = super.addChannel(options);
-        this.children.set(ret.my.id, ret);
         return ret;
     }
     addFolder(options) {
+        options.id = super.ensureNamespace(options.id);
         const ret = super.addFolder(options);
-        this.children.set(ret.my.id, ret);
         return ret;
+    }
+    syncObjectsAsync(options) {
+        const _super = Object.create(null, {
+            syncObjectsAsync: { get: () => super.syncObjectsAsync }
+        });
+        return __awaiter(this, void 0, void 0, function* () {
+            yield _super.syncObjectsAsync.call(this, options);
+        });
+    }
+    validate() {
+        return super.validate();
     }
 }
 exports.iobObjectTree = iobObjectTree;
+//#endregion
+//#region State class
 class iobObjectState extends iobObjectTreeBase {
     constructor(adapterInstance, obj) {
         super(adapterInstance);
         //this.children.set("id", 1); // jetzt wird gemeckert, falls du doch children hinzufügen willst
         this.my = obj;
+        this.isSync = false;
+    }
+    setValue(value, ack = false) {
+        if (this.getTypefromValue(value) !== this.my.object.common.type) {
+            throw `Invalid value type, type must be ${this.my.object.common.type}`;
+        }
+        if (this.isSync === false) {
+            this.my.value = value;
+            return true;
+        }
+        else {
+            // SET DIRECT CURRENTLY MISSING
+            return true;
+        }
+    }
+    setValueAsync(value, ack = false) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.getTypefromValue(value) !== this.my.object.common.type) {
+                throw `Invalid value type, type must be ${this.my.object.common.type}`;
+            }
+            if (this.isSync === false) {
+                this.my.value = value;
+                return true;
+            }
+            else {
+                // SET DIRECT CURRENTLY MISSING
+                return true;
+            }
+        });
     }
 }
 exports.iobObjectState = iobObjectState;
+//#endregion
+//#region Channel class
 class iobObjectChannel extends iobObjectTreeBase {
     constructor(adapterInstance, obj) {
         super(adapterInstance);
         //this.children.set("id", (undefined as any) as iobObjectChannel); // Kleiner Hack, um zu demonstrieren dass man Channel hinzufügen kann
         this.my = obj;
+        this.isSync = false;
         //this.children = new Map();
     }
     addState(options) {
+        options.id = super.ensureNamespace(options.id, this.my.id);
         const ret = super.addState(options);
-        this.children.set(ret.my.id, ret);
         return ret;
     }
     addStateFromTemplate(options) {
+        options.id = super.ensureNamespace(options.id, this.my.id);
         const ret = super.addStateFromTemplate(options);
-        this.children.set(ret.my.id, ret);
         return ret;
     }
     addFolder(options) {
+        options.id = super.ensureNamespace(options.id, this.my.id);
         const ret = super.addFolder(options);
-        this.children.set(ret.my.id, ret);
         return ret;
     }
 }
 exports.iobObjectChannel = iobObjectChannel;
+//#endregion
+//#region  Folder class
 class iobObjectFolder extends iobObjectTreeBase {
     constructor(adapterInstance, obj) {
         super(adapterInstance);
         //this.children.set("id", (undefined as any) as iobObjectChannel); // Kleiner Hack, um zu demonstrieren dass man Channel hinzufügen kann
         this.my = obj;
+        this.isSync = false;
         //this.children = new Map();
     }
     addState(options) {
+        options.id = super.ensureNamespace(options.id, this.my.id);
         const ret = super.addState(options);
-        this.children.set(ret.my.id, ret);
         return ret;
     }
     addStateFromTemplate(options) {
+        options.id = super.ensureNamespace(options.id, this.my.id);
         const ret = super.addStateFromTemplate(options);
-        this.children.set(ret.my.id, ret);
         return ret;
     }
     addFolder(options) {
+        options.id = super.ensureNamespace(options.id, this.my.id);
         const ret = super.addFolder(options);
-        this.children.set(ret.my.id, ret);
         return ret;
     }
 }
 exports.iobObjectFolder = iobObjectFolder;
+//#endregion
 //# sourceMappingURL=iobObjClass.js.map
