@@ -54,6 +54,7 @@ function getTypefromValue(value) {
                 return "object";
                 // typeof null === "object"
             }
+            break;
         case "number":
             return "number";
         case "string":

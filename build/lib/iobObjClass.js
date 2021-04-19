@@ -31,7 +31,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.iobObjectFolder = exports.iobObjectChannel = exports.iobObjectState = exports.iobObjectTree = void 0;
 /* eslint-disable @typescript-eslint/indent */
 const iobObjectHelper = __importStar(require("../main"));
-//#endregion Base class
+//#region Base class
 class iobObjectTreeBase {
     constructor(adapterInstance) {
         this.adapterInstance = adapterInstance;
@@ -40,16 +40,20 @@ class iobObjectTreeBase {
     }
     //#region State functions
     addState(options) {
+        var _a;
         // Build object
         const obj = iobObjectHelper.buildObject(this.adapterInstance, Object.assign(Object.assign({}, options), { objectType: "state" }));
+        options.id = this.ensureNamespace(options.id, (_a = this.my) === null || _a === void 0 ? void 0 : _a.id);
         const ret = new iobObjectState(this.adapterInstance, obj);
         this.children.set(ret.my.id, ret);
         this.isSyncComplete = false;
         return ret;
     }
     addStateFromTemplate(options) {
+        var _a;
         // Build object
         const obj = iobObjectHelper.buildObject(this.adapterInstance, Object.assign(Object.assign({}, options), { objectType: "template" }));
+        options.id = this.ensureNamespace(options.id, (_a = this.my) === null || _a === void 0 ? void 0 : _a.id);
         const ret = new iobObjectState(this.adapterInstance, obj);
         this.children.set(ret.my.id, ret);
         this.isSyncComplete = false;
@@ -58,8 +62,10 @@ class iobObjectTreeBase {
     //#endregion
     //#region Channel functions
     addChannel(options) {
+        var _a;
         // Build object
         const obj = iobObjectHelper.buildObject(this.adapterInstance, Object.assign(Object.assign({}, options), { objectType: "template", template: "channel" }));
+        options.id = this.ensureNamespace(options.id, (_a = this.my) === null || _a === void 0 ? void 0 : _a.id);
         const ret = new iobObjectChannel(this.adapterInstance, obj);
         this.children.set(ret.my.id, ret);
         this.isSyncComplete = false;
@@ -68,8 +74,10 @@ class iobObjectTreeBase {
     //#endregion
     //#region Folder functions
     addFolder(options) {
+        var _a;
         // Build object
         const obj = iobObjectHelper.buildObject(this.adapterInstance, Object.assign(Object.assign({}, options), { objectType: "template", template: "folder" }));
+        options.id = this.ensureNamespace(options.id, (_a = this.my) === null || _a === void 0 ? void 0 : _a.id);
         const ret = new iobObjectFolder(this.adapterInstance, obj);
         this.children.set(ret.my.id, ret);
         this.isSyncComplete = false;
@@ -126,8 +134,9 @@ class iobObjectTreeBase {
                 }
                 else if (Object.prototype.toString.call(value) === "[object Object]") {
                     return "object";
-                    // typeof null === "object"
                 }
+                // typeof null === "object"
+                break;
             case "number":
                 return "number";
             case "string":
@@ -146,25 +155,17 @@ class iobObjectTree extends iobObjectTreeBase {
         this.children = new Map();
     }
     addState(options) {
-        options.id = super.ensureNamespace(options.id);
-        const ret = super.addState(options);
-        return ret;
+        return super.addState(options);
     }
     // Einschränkung von Template noch notwendig, nicht Device, Channel, Folder
     addStateFromTemplate(options) {
-        options.id = super.ensureNamespace(options.id);
-        const ret = super.addStateFromTemplate(options);
-        return ret;
+        return super.addStateFromTemplate(options);
     }
     addChannel(options) {
-        options.id = super.ensureNamespace(options.id);
-        const ret = super.addChannel(options);
-        return ret;
+        return super.addChannel(options);
     }
     addFolder(options) {
-        options.id = super.ensureNamespace(options.id);
-        const ret = super.addFolder(options);
-        return ret;
+        return super.addFolder(options);
     }
     syncObjectsAsync(options) {
         const _super = Object.create(null, {
@@ -197,7 +198,7 @@ class iobObjectState extends iobObjectTreeBase {
             return true;
         }
         else {
-            // SET DIRECT CURRENTLY MISSING
+            this.adapterInstance.setState(this.my.id, { val: value, ack: ack });
             return true;
         }
     }
@@ -211,7 +212,7 @@ class iobObjectState extends iobObjectTreeBase {
                 return true;
             }
             else {
-                // SET DIRECT CURRENTLY MISSING
+                yield this.adapterInstance.setStateAsync(this.my.id, { val: value, ack: ack });
                 return true;
             }
         });
@@ -229,19 +230,13 @@ class iobObjectChannel extends iobObjectTreeBase {
         //this.children = new Map();
     }
     addState(options) {
-        options.id = super.ensureNamespace(options.id, this.my.id);
-        const ret = super.addState(options);
-        return ret;
+        return super.addState(options);
     }
     addStateFromTemplate(options) {
-        options.id = super.ensureNamespace(options.id, this.my.id);
-        const ret = super.addStateFromTemplate(options);
-        return ret;
+        return super.addStateFromTemplate(options);
     }
     addFolder(options) {
-        options.id = super.ensureNamespace(options.id, this.my.id);
-        const ret = super.addFolder(options);
-        return ret;
+        return super.addFolder(options);
     }
 }
 exports.iobObjectChannel = iobObjectChannel;
@@ -256,19 +251,13 @@ class iobObjectFolder extends iobObjectTreeBase {
         //this.children = new Map();
     }
     addState(options) {
-        options.id = super.ensureNamespace(options.id, this.my.id);
-        const ret = super.addState(options);
-        return ret;
+        return super.addState(options);
     }
     addStateFromTemplate(options) {
-        options.id = super.ensureNamespace(options.id, this.my.id);
-        const ret = super.addStateFromTemplate(options);
-        return ret;
+        return super.addStateFromTemplate(options);
     }
     addFolder(options) {
-        options.id = super.ensureNamespace(options.id, this.my.id);
-        const ret = super.addFolder(options);
-        return ret;
+        return super.addFolder(options);
     }
 }
 exports.iobObjectFolder = iobObjectFolder;

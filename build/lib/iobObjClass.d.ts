@@ -2,6 +2,7 @@
 import * as iobObjectHelper from "../main";
 declare class iobObjectTreeBase {
     children: Map<string, iobObjectTreeBase>;
+    my: iobObjectHelper.ObjectWithValue | undefined;
     adapterInstance: ioBroker.Adapter;
     isSyncComplete: boolean;
     constructor(adapterInstance: ioBroker.Adapter);

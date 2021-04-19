@@ -58,6 +58,7 @@ function getTypefromValue(value:any): ioBroker.CommonType|undefined {
 				return "object";
 			// typeof null === "object"
 			}
+			break;
 		case "number":
 			return "number";
 		case "string":

@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/indent */
 import * as iobObjectHelper from "../main";
 
-//#endregion Base class
+//#region Base class
 class iobObjectTreeBase{
 	public children: Map<string, iobObjectTreeBase>;
+	public my: iobObjectHelper.ObjectWithValue | undefined;
 	// Eventuell würde es Sinn machen, children als ReadonlyMap zu exportieren, damit sie nur von intern bearbeitet wird
 	adapterInstance: ioBroker.Adapter;
 	isSyncComplete: boolean;
@@ -26,6 +27,7 @@ class iobObjectTreeBase{
 			...options,
 			objectType: "state",
 		});
+		options.id = this.ensureNamespace(options.id, this.my?.id);
 		const ret = new iobObjectState(this.adapterInstance, obj);
 		this.children.set(ret.my.id, ret);
 		this.isSyncComplete = false;
@@ -43,6 +45,7 @@ class iobObjectTreeBase{
 			...options,
 			objectType: "template",
 		}) as iobObjectHelper.ObjectWithValue<"state">;
+		options.id = this.ensureNamespace(options.id, this.my?.id);
 		const ret = new iobObjectState(this.adapterInstance, obj);
 		this.children.set(ret.my.id, ret);
 		this.isSyncComplete = false;
@@ -63,6 +66,7 @@ class iobObjectTreeBase{
 			objectType: "template",
 			template: "channel"
 		}) as iobObjectHelper.ObjectWithValue<"channel">;
+		options.id = this.ensureNamespace(options.id, this.my?.id);
 		const ret = new iobObjectChannel(this.adapterInstance, obj);
 		this.children.set(ret.my.id, ret);
 		this.isSyncComplete = false;
@@ -83,6 +87,7 @@ class iobObjectTreeBase{
 			objectType: "template",
 			template: "folder"
 		}) as iobObjectHelper.ObjectWithValue<"folder">;
+		options.id = this.ensureNamespace(options.id, this.my?.id);
 		const ret = new iobObjectFolder(this.adapterInstance, obj);
 		this.children.set(ret.my.id, ret);
 		this.isSyncComplete = false;
@@ -136,8 +141,9 @@ class iobObjectTreeBase{
 				// Handle typeof {} === "object"
 				}else if(Object.prototype.toString.call(value) === "[object Object]"){
 					return "object";
-				// typeof null === "object"
 				}
+				// typeof null === "object"
+				break;
 			case "number":
 				return "number";
 			case "string":
@@ -170,9 +176,7 @@ export class iobObjectTree extends iobObjectTreeBase{
 		"objectType"
 		>,
 	): iobObjectState {
-		options.id = super.ensureNamespace(options.id);
-		const ret = super.addState(options);
-		return ret;
+		return super.addState(options);
 	}
 
 	// Einschränkung von Template noch notwendig, nicht Device, Channel, Folder
@@ -182,9 +186,7 @@ export class iobObjectTree extends iobObjectTreeBase{
 		"objectType"
 		>,
 	): iobObjectState {
-		options.id = super.ensureNamespace(options.id);
-		const ret = super.addStateFromTemplate(options);
-		return ret;
+		return super.addStateFromTemplate(options);
 	}
 
 	addChannel(
@@ -193,9 +195,7 @@ export class iobObjectTree extends iobObjectTreeBase{
 		"objectType"|"template"
 		>,
 	): iobObjectChannel {
-		options.id = super.ensureNamespace(options.id);
-		const ret = super.addChannel(options);
-		return ret;
+		return super.addChannel(options);
     }
 
     addFolder(
@@ -204,9 +204,7 @@ export class iobObjectTree extends iobObjectTreeBase{
 		"objectType"|"template"
 		>,
 	): iobObjectFolder {
-		options.id = super.ensureNamespace(options.id);
-		const ret = super.addFolder(options);
-		return ret;
+		return super.addFolder(options);
 	}
 
 	async syncObjectsAsync(options: iobObjectHelper.SyncObjectsOptions): Promise<void>{
@@ -245,7 +243,7 @@ export class iobObjectState extends iobObjectTreeBase {
 			this.my.value = value;
 			return true;
 		}else{
-			// SET DIRECT CURRENTLY MISSING
+			this.adapterInstance.setState(this.my.id, { val: value, ack: ack });
 			return true;
 		}
 	}
@@ -258,7 +256,7 @@ export class iobObjectState extends iobObjectTreeBase {
 			this.my.value = value;
 			return true;
 		}else{
-			// SET DIRECT CURRENTLY MISSING
+			await this.adapterInstance.setStateAsync(this.my.id, { val: value, ack: ack });
 			return true;
 		}
 	}
@@ -290,9 +288,7 @@ export class iobObjectChannel extends iobObjectTreeBase {
 		"objectType"
 		>,
 	): iobObjectState {
-		options.id = super.ensureNamespace(options.id, this.my.id);
-		const ret = super.addState(options);
-		return ret;
+		return super.addState(options);
 	}
 
 	addStateFromTemplate(
@@ -301,9 +297,7 @@ export class iobObjectChannel extends iobObjectTreeBase {
 		"objectType"
 		>,
 	): iobObjectState {
-		options.id = super.ensureNamespace(options.id, this.my.id);
-		const ret = super.addStateFromTemplate(options);
-		return ret;
+		return super.addStateFromTemplate(options);
     }
 
     addFolder(
@@ -312,9 +306,7 @@ export class iobObjectChannel extends iobObjectTreeBase {
 		"objectType"|"template"
 		>,
 	): iobObjectFolder {
-		options.id = super.ensureNamespace(options.id, this.my.id);
-		const ret = super.addFolder(options);
-		return ret;
+		return super.addFolder(options);
 	}
 }
 //#endregion
@@ -344,9 +336,7 @@ export class iobObjectFolder extends iobObjectTreeBase {
 		"objectType"
 		>,
 	): iobObjectState {
-		options.id = super.ensureNamespace(options.id, this.my.id);
-		const ret = super.addState(options);
-		return ret;
+		return super.addState(options);
 	}
 
 	addStateFromTemplate(
@@ -355,9 +345,7 @@ export class iobObjectFolder extends iobObjectTreeBase {
 		"objectType"
 		>,
 	): iobObjectState {
-		options.id = super.ensureNamespace(options.id, this.my.id);
-		const ret = super.addStateFromTemplate(options);
-		return ret;
+		return super.addStateFromTemplate(options);
     }
 
     addFolder(
@@ -366,9 +354,7 @@ export class iobObjectFolder extends iobObjectTreeBase {
 		"objectType"|"template"
 		>,
 	): iobObjectFolder {
-		options.id = super.ensureNamespace(options.id, this.my.id);
-		const ret = super.addFolder(options);
-		return ret;
+		return super.addFolder(options);
 	}
 }
 //#endregion
