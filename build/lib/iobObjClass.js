@@ -118,11 +118,15 @@ class iobObjectTreeBase {
             if (this.isSyncComplete === false) {
                 yield iobObjectHelper.syncObjects(this.adapterInstance, this.flatten(), options);
                 this.isSyncComplete = true;
-                for (const [, child] of this.children.entries()) {
-                    child.isSync = true;
-                }
+                this.setChildrenSyncState(this.children, true);
             }
         });
+    }
+    setChildrenSyncState(children, SyncState) {
+        for (const [, child] of (children).entries()) {
+            child.isSync = SyncState;
+            this.setChildrenSyncState(children, SyncState);
+        }
     }
     getTypefromValue(value) {
         switch (typeof (value)) {
