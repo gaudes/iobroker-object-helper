@@ -125,8 +125,13 @@ class iobObjectTreeBase {
     setChildrenSyncState(children, SyncState) {
         for (const [, child] of (children).entries()) {
             child.isSync = SyncState;
-            this.setChildrenSyncState(children, SyncState);
+            if (child.children) {
+                this.setChildrenSyncState(child.children, SyncState);
+            }
         }
+    }
+    testSetChildrenSyncState() {
+        this.setChildrenSyncState(this.children, true);
     }
     getTypefromValue(value) {
         switch (typeof (value)) {

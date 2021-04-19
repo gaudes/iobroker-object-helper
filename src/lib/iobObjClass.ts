@@ -139,6 +139,10 @@ class iobObjectTreeBase{
 		}
 	}
 
+	testSetChildrenSyncState(): void{
+		this.setChildrenSyncState(this.children as Map<string, iobObjectChannel | iobObjectState | iobObjectFolder>, true);
+	}
+
 	protected getTypefromValue(value:any): ioBroker.CommonType|undefined {
 		switch (typeof(value)){
 			case "object":

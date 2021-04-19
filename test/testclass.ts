@@ -27,10 +27,12 @@ describe("Test ClassUsage", () =>{
         // Check state
         expect(TestState).to.have.property("my").to.have.property("id").that.be.eql("test.0.test");
         TestState.setValue("TEST");
+        iobObjTree.testSetChildrenSyncState();
         expect(TestState.setValue.bind(TestState, 123)).to.throw("Invalid value type, type must be string");
         expect(iobObjTree.addStateFromTemplate.bind(iobObjTree, {id: "test.0.test.test", name: "test", value: "Test", template: "html"})).to.throw("Invalid object id: test.0.test.test");
         console.log(iobObjTree.flatten());
         console.log(iobObjTree);
+        console.log(TestChannel);
         iobObjTree.validate();
     });
 });
