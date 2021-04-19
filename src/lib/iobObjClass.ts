@@ -133,7 +133,9 @@ class iobObjectTreeBase{
 	protected setChildrenSyncState(children: Map<string, iobObjectChannel | iobObjectState | iobObjectFolder >, SyncState: boolean): void{
 		for (const [, child] of (children).entries()){
 			child.isSync = SyncState;
-			this.setChildrenSyncState(children, SyncState);
+			if (child.children){
+				this.setChildrenSyncState(child.children, SyncState);
+			}
 		}
 	}
 
