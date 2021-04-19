@@ -288,7 +288,7 @@ export class iobObjectChannel extends iobObjectTreeBase {
 		"objectType"
 		>,
 	): iobObjectState {
-		return super.addState(options);
+		return super.addState({...options, id: `${this.my.id}.${options.id}`});
 	}
 
 	addStateFromTemplate(
@@ -297,7 +297,7 @@ export class iobObjectChannel extends iobObjectTreeBase {
 		"objectType"
 		>,
 	): iobObjectState {
-		return super.addStateFromTemplate(options);
+		return super.addStateFromTemplate({...options, id: `${this.my.id}.${options.id}`});
     }
 
     addFolder(
@@ -306,7 +306,7 @@ export class iobObjectChannel extends iobObjectTreeBase {
 		"objectType"|"template"
 		>,
 	): iobObjectFolder {
-		return super.addFolder(options);
+		return super.addFolder({...options, id: `${this.my.id}.${options.id}`});
 	}
 }
 //#endregion
@@ -336,7 +336,7 @@ export class iobObjectFolder extends iobObjectTreeBase {
 		"objectType"
 		>,
 	): iobObjectState {
-		return super.addState(options);
+		return super.addState({...options, id: `${this.my.id}.${options.id}`});
 	}
 
 	addStateFromTemplate(
@@ -345,7 +345,7 @@ export class iobObjectFolder extends iobObjectTreeBase {
 		"objectType"
 		>,
 	): iobObjectState {
-		return super.addStateFromTemplate(options);
+		return super.addStateFromTemplate({...options, id: `${this.my.id}.${options.id}`});
     }
 
     addFolder(
@@ -354,7 +354,7 @@ export class iobObjectFolder extends iobObjectTreeBase {
 		"objectType"|"template"
 		>,
 	): iobObjectFolder {
-		return super.addFolder(options);
+		return super.addFolder({...options, id: `${this.my.id}.${options.id}`});
 	}
 }
 //#endregion

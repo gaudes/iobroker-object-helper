@@ -23,6 +23,7 @@ describe("Test ClassUsage", () =>{
         const TestState = iobObjTree.addStateFromTemplate({id: "test.0.test", name: "test", value: "Test", template: "html"});
         const TestChannel = iobObjTree.addChannel({id: "channel", name: "channel"});
         const TestState2 = TestChannel.addStateFromTemplate({id: "substate", name: "test", value: "Test", template: "html"});
+        console.log(iobObjTree.flatten());
         // Check state
         expect(TestState).to.have.property("my").to.have.property("id").that.be.eql("test.0.test");
         TestState.setValue("TEST");

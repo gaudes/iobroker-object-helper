@@ -230,13 +230,13 @@ class iobObjectChannel extends iobObjectTreeBase {
         //this.children = new Map();
     }
     addState(options) {
-        return super.addState(options);
+        return super.addState(Object.assign(Object.assign({}, options), { id: `${this.my.id}.${options.id}` }));
     }
     addStateFromTemplate(options) {
-        return super.addStateFromTemplate(options);
+        return super.addStateFromTemplate(Object.assign(Object.assign({}, options), { id: `${this.my.id}.${options.id}` }));
     }
     addFolder(options) {
-        return super.addFolder(options);
+        return super.addFolder(Object.assign(Object.assign({}, options), { id: `${this.my.id}.${options.id}` }));
     }
 }
 exports.iobObjectChannel = iobObjectChannel;
@@ -251,13 +251,13 @@ class iobObjectFolder extends iobObjectTreeBase {
         //this.children = new Map();
     }
     addState(options) {
-        return super.addState(options);
+        return super.addState(Object.assign(Object.assign({}, options), { id: `${this.my.id}.${options.id}` }));
     }
     addStateFromTemplate(options) {
-        return super.addStateFromTemplate(options);
+        return super.addStateFromTemplate(Object.assign(Object.assign({}, options), { id: `${this.my.id}.${options.id}` }));
     }
     addFolder(options) {
-        return super.addFolder(options);
+        return super.addFolder(Object.assign(Object.assign({}, options), { id: `${this.my.id}.${options.id}` }));
     }
 }
 exports.iobObjectFolder = iobObjectFolder;
