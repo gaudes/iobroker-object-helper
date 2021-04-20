@@ -268,6 +268,7 @@ export class iobObjectState extends iobObjectTreeBase {
 			this.my.value = value;
 			return true;
 		}else{
+			this.my.value = value;
 			this.adapterInstance.setState(this.my.id, { val: value, ack: ack });
 			return true;
 		}
@@ -281,6 +282,7 @@ export class iobObjectState extends iobObjectTreeBase {
 			this.my.value = value;
 			return true;
 		}else{
+			this.my.value = value;
 			await this.adapterInstance.setStateAsync(this.my.id, { val: value, ack: ack });
 			return true;
 		}
