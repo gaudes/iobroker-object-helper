@@ -115,6 +115,7 @@ class iobObjectTreeBase {
     }
     syncObjectsAsync(options) {
         return __awaiter(this, void 0, void 0, function* () {
+            this.checkChildrenSyncState(this.children);
             if (this.isSyncComplete === false) {
                 yield iobObjectHelper.syncObjects(this.adapterInstance, this.flatten(), options);
                 this.isSyncComplete = true;
@@ -127,6 +128,18 @@ class iobObjectTreeBase {
             child.isSync = SyncState;
             if (child.children) {
                 this.setChildrenSyncState(child.children, SyncState);
+            }
+        }
+    }
+    checkChildrenSyncState(children) {
+        if (this.isSyncComplete !== false) {
+            for (const [, child] of (children).entries()) {
+                if (child.isSync === false) {
+                    this.isSyncComplete = false;
+                }
+                if (child.children) {
+                    this.checkChildrenSyncState(child.children);
+                }
             }
         }
     }

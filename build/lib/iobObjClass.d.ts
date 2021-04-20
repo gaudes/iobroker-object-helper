@@ -25,6 +25,7 @@ declare class iobObjectTreeBase {
     protected validate(): boolean;
     protected syncObjectsAsync(options: iobObjectHelper.SyncObjectsOptions): Promise<void>;
     protected setChildrenSyncState(children: Map<string, iobObjectChannel | iobObjectState | iobObjectFolder>, SyncState: boolean): void;
+    protected checkChildrenSyncState(children: Map<string, iobObjectChannel | iobObjectState | iobObjectFolder>): void;
     testSetChildrenSyncState(): void;
     protected getTypefromValue(value: any): ioBroker.CommonType | undefined;
 }

@@ -123,6 +123,7 @@ class iobObjectTreeBase{
 	}
 
 	protected async syncObjectsAsync(options: iobObjectHelper.SyncObjectsOptions): Promise<void>{
+		this.checkChildrenSyncState(this.children as Map<string, iobObjectChannel | iobObjectState | iobObjectFolder>);
 		if (this.isSyncComplete === false){
 			await iobObjectHelper.syncObjects(this.adapterInstance, this.flatten(), options);
 			this.isSyncComplete = true;
@@ -135,6 +136,19 @@ class iobObjectTreeBase{
 			child.isSync = SyncState;
 			if (child.children){
 				this.setChildrenSyncState(child.children, SyncState);
+			}
+		}
+	}
+
+	protected checkChildrenSyncState(children: Map<string, iobObjectChannel | iobObjectState | iobObjectFolder >): void{
+		if (this.isSyncComplete !== false){
+			for (const [, child] of (children).entries()){
+				if (child.isSync === false){
+					this.isSyncComplete = false;
+				}
+				if (child.children){
+					this.checkChildrenSyncState(child.children);
+				}
 			}
 		}
 	}
